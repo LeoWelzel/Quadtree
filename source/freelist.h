@@ -97,4 +97,33 @@ inline TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
     return this->dataPtr[index];
 }
 
+
+template<typename TypeName, const size_t FixedSize>
+int FreeList<TypeName, FixedSize>::pushBack()
+{
+    const int newPosition = (this->numElements + 1);
+
+    /* Reallocate if needed. */
+    if (newPosition >= this->capacity)
+    {
+        /* Arbitrarily chose to double in size. */
+        this->capacity <<= 1;
+
+        
+
+    }
+}
+
+template<typename TypeName, const size_t FixedSize>
+int FreeList<TypeName, FixedSize>::pushBack(const TypeName& value)
+{
+
+}
+
+template<typename TypeName, const size_t FixedSize>
+void FreeList<TypeName, FixedSize>::popBack()
+{
+
+}
+
 #endif
