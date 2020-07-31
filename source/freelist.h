@@ -12,6 +12,12 @@ public:
     FreeList();
     ~FreeList();
 
+    /* Returns the number of elements stored in the freelist. */
+    int size() const;
+
+    /* Clears the freelist. */
+    void clear();
+
 private:
     /* Allocate memory on the stack to avoid heap allocation until necessary. */
     TypeName fixed[FixedSize];
@@ -44,6 +50,19 @@ FreeList<TypeName, FixedSize>::~FreeList()
     /* Free dynamically allocated memory. */
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;
+}
+
+template<typename TypeName, const size_t FixedSize>
+int FreeList<TypeName, FixedSize>::size() const
+{
+    return this->numElements;
+}
+
+template<typename TypeName, const size_t FixedSize>
+void FreeList<TypeName, FixedSize>::clear()
+{
+    this->numElements = 0;
+    this->freeElement = FreeList::NONE_REMOVED;
 }
 
 #endif
