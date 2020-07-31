@@ -45,20 +45,16 @@ inline TypeName& FreeStack<TypeName, FixedSize>::top() const
 template<typename TypeName, const size_t FixedSize>
 void FreeStack<TypeName, FixedSize>::pushBack(const TypeName& value)
 {
-    const int newPosition = this->numElements++;
-
-    /* Reallocate if needed. */
-    if (newPosition >= this->capacity)
-    {
-        this->reallocate();
-    }
+    const int index = ParentContainer<TypeName, FixedSize>::pushBack();
 
     #ifdef ASSERTIONS
         /* Over-caution with pointers. */
         assert(this->numElements <= this->capacity);
+        assert(index >= 0);
+        assert(index < this->capacity);
     #endif
 
-    this->dataPtr[newPosition] = value;
+    this->dataPtr[index] = value;
 }
 
 template<typename TypeName, const size_t FixedSize>

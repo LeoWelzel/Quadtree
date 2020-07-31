@@ -22,23 +22,23 @@ public:
         }
 
         #ifdef TO_STRING
-        std::string toString() const
-        {
-            std::string output = "{ ";
+            std::string toString() const
+            {
+                std::string output = "{ ";
 
-            for (size_t i = 0; i < this->numElements - 1; i++)
-                output.append(std::to_string(this->dataPtr[i]) + ", ");
-            
-            output.append(std::to_string(this->dataPtr[this->numElements - 1]) + " }");
-            
-            return output;
-        }
+                for (size_t i = 0; i < this->numElements - 1; i++)
+                    output.append(std::to_string(this->dataPtr[i]) + ", ");
+                
+                output.append(std::to_string(this->dataPtr[this->numElements - 1]) + " }");
+                
+                return output;
+            }
         #endif
     #endif
 
 protected:
-    /* Reallocates the memory. */
-    void reallocate();
+    /* Makes space for an element at the back of the array, returning its index. */
+    int pushBack();
 
     /* Allocate memory on the stack to avoid heap allocation until necessary. */
     TypeName fixed[FixedSize];
@@ -52,6 +52,10 @@ protected:
 
     /* The number of elements stored. */
     int numElements;
+
+private:
+    /* Reallocates the memory. */
+    void reallocate();
 };
 
 template<typename TypeName, const size_t FixedSize>
@@ -66,13 +70,23 @@ ParentContainer<TypeName, FixedSize>::~ParentContainer()
     /* Free dynamically allocated memory. */
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;
-    
 }
 
 template<typename TypeName, const size_t FixedSize>
 int ParentContainer<TypeName, FixedSize>::size() const
 {
     return this->numElements;
+}
+
+template<typename TypeName, const size_t FixedSize>
+int ParentContainer<TypeName, FixedSize>::pushBack()
+{
+    const int newPosition = this->numElements++;
+
+    if (newPosition >= this->capacity)
+        this->reallocate();
+    
+    return newPosition;
 }
 
 template<typename TypeName, const size_t FixedSize>
