@@ -1,0 +1,8 @@
+# VSCode.
+.vscode/
+
+# Builds.
+bin/
+
+# Logs.
+logs/
