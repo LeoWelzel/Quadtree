@@ -65,9 +65,56 @@ namespace Tests
         std::cout << "Insertion test complete.\n";
     }
 
+    void listRemovalTest()
+    {
+        FreeList<int> list;
+
+        for (int i = 0; i < ITERATIONS; i++)
+            list.insert(i);
+
+        #ifdef DEBUGGING
+        const int initialCapacity = list.getCapacity(),
+            initialSize = list.size();
+        #endif
+
+        for (int i = 0; i < ITERATIONS; i += 7)
+            list.erase(i);
+
+        for (int i = 0; i < ITERATIONS; i += 7)
+            list.insert(i * 7);
+
+        #ifdef DEBUGGING
+        const int finalCapacity = list.getCapacity(),
+            finalSize = list.size();
+        
+        assert(initialCapacity == finalCapacity);
+        assert(initialSize == finalSize);
+        #endif
+
+        std::cout << "Removal test complete.\n";
+    }
+
+    void listVisualTest()
+    {
+        FreeList<int> list;
+
+        const int localIterations = 258;
+        for (int i = 0; i < localIterations; i++)
+            list.insert(i);
+        for (int i = 0; i < localIterations; i += 7)
+            list.erase(i);
+        for (int i = 0; i < localIterations; i += 7)
+            list.insert(i * 7);
+
+        std::cout << list.toString() << '\n';
+        std::cout << "List visual test complete.\n";
+    }
+
     void listTests()
     {
         listInsertTest();
+        listRemovalTest();
+        listVisualTest();
 
         std::cout << "List tests completed.\n";
     }

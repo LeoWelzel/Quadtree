@@ -69,12 +69,11 @@ void FreeList<TypeName, FixedSize>::erase(int index)
         assert(index < this->capacity);
     #endif
 
-    int* tempPtr = (int*)(this->dataPtr[index]);
+    int* tempPtr = (int*)(this->dataPtr + index);
 
     /* Reconnect the linked list. */
     *tempPtr = this->freeElement;
     this->freeElement = index;
 }
-
 
 #endif

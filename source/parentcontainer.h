@@ -67,11 +67,11 @@ template<typename TypeName, const size_t FixedSize>
 ParentContainer<TypeName, FixedSize>::~ParentContainer()
 {
     /* Free dynamically allocated memory. */
-    std::cout << "Base destructor entered.\n";
+    // std::cout << "Base destructor entered.\n";
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;
 
-    std::cout << "Base destructor exited.\n";
+    // std::cout << "Base destructor exited.\n";
 }
 
 template<typename TypeName, const size_t FixedSize>
