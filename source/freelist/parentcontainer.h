@@ -16,6 +16,9 @@ public:
     int size() const;
 
 protected:
+    /* Reallocates the memory. */
+    void reallocate();
+
     /* Allocate memory on the stack to avoid heap allocation until necessary. */
     TypeName fixed[FixedSize];
 
@@ -47,6 +50,23 @@ template<typename TypeName, const size_t FixedSize>
 int ParentContainer<TypeName, FixedSize>::size() const
 {
     return this->numElements;
+}
+
+template<typename TypeName, const size_t FixedSize>
+void reallocate()
+{
+    /* Arbitrarily chose to double in size. */
+    this->capacity <<= 1;
+
+    TypeName* temp = new TypeName[this->capacity];
+
+    /* Populate with existing contents. */
+    std::copy(this->dataPtr, this->dataPtr + this->numElements, temp);
+
+    if (this->dataPtr != this->fixed)
+        delete[] this->dataPtr;
+
+    this->dataPtr = temp;
 }
 
 #endif
