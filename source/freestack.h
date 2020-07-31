@@ -1,7 +1,7 @@
 #ifndef FREESTACK_H_INCLUDED
 #define FREESTACK_H_INCLUDED
 
-#include "../defs.h"
+#include "defs.h"
 #include "parentcontainer.h"
 
 template<typename TypeName, const size_t FixedSize = 128>
@@ -70,7 +70,7 @@ void FreeStack<TypeName, FixedSize>::pushBack(const TypeName& value)
 
     #ifdef ASSERTIONS
         /* Over-caution with pointers. */
-        assert(this->numElements - 1 > 0 && this->numElements < this->capacity);
+        assert(this->numElements < this->capacity);
     #endif
 
     this->dataPtr[this->numElements - 1] = value;

@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include "../defs.h"
+#include "defs.h"
 #include "parentcontainer.h"
 
 template<typename TypeName, const size_t FixedSize = 128>
