@@ -20,6 +20,9 @@ public:
     /* Clears the freelist. */
     void clear();
 
+    /* Returns a reference to the element at the given index. */
+    inline TypeName& at(const int index) const;
+
 private:
     /* Allocate memory on the stack to avoid heap allocation until necessary. */
     TypeName fixed[FixedSize];
@@ -65,6 +68,17 @@ void FreeList<TypeName, FixedSize>::clear()
 {
     this->numElements = 0;
     this->freeElement = FreeList::NONE_REMOVED;
+}
+
+template<typename TypeName, const size_t FixedSize>
+inline TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
+{
+    /* Leave this in until it has been ascertained that this never goes wrong. */
+    #ifdef ASSERTIONS
+        assert(index >= 0 && index < this->capacity);
+    #endif
+
+    return this->dataPtr[index];
 }
 
 #endif
