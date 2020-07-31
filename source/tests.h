@@ -6,6 +6,7 @@
 #include <string>
 
 #include "freestack.h"
+#include "freelist.h"
 
 namespace Tests
 {

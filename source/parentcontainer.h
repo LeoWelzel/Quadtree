@@ -36,7 +36,7 @@ public:
         #endif
     #endif
 
-protected:
+// protected:
     /* Makes space for an element at the back of the array, returning its index. */
     int pushBack();
 
@@ -44,8 +44,7 @@ protected:
     TypeName fixed[FixedSize];
 
     /* Points to the data being used in the freelist. */
-    TypeName* dataPtr,
-        *tempDebugging;
+    TypeName* dataPtr;
 
     /* Indicates the freelist capacity. */
     int capacity;
@@ -53,7 +52,7 @@ protected:
     /* The number of elements stored. */
     int numElements;
 
-private:
+// private:
     /* Reallocates the memory. */
     void reallocate();
 };
@@ -68,8 +67,11 @@ template<typename TypeName, const size_t FixedSize>
 ParentContainer<TypeName, FixedSize>::~ParentContainer()
 {
     /* Free dynamically allocated memory. */
+    std::cout << "Base destructor entered.\n";
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;
+
+    std::cout << "Base destructor exited.\n";
 }
 
 template<typename TypeName, const size_t FixedSize>
@@ -93,13 +95,13 @@ template<typename TypeName, const size_t FixedSize>
 void ParentContainer<TypeName, FixedSize>::reallocate()
 {
     /* Arbitrarily chose to double in size. */
+    const int formerCapacity = this->capacity;
     this->capacity *= 2;
 
     TypeName* temp = new TypeName[this->capacity];
-    tempDebugging = temp;
 
     /* Populate with existing contents. */
-    std::copy(this->dataPtr, this->dataPtr + this->capacity / 2, temp);
+    std::copy(this->dataPtr, this->dataPtr + formerCapacity, temp);
 
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;

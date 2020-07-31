@@ -2,11 +2,13 @@
 
 namespace Tests
 {
+    const int ITERATIONS = /* 65537 */ 1025;
+
     void stackPushTest()
     {
         FreeStack<int, 2> stack;
 
-        for (int i = 0; i < 65537; i++)
+        for (int i = 0; i < ITERATIONS; i++)
         {
             stack.pushBack(i);
             assert(stack.size() == i + 1);
@@ -25,7 +27,6 @@ namespace Tests
         }
         
         std::cout << stack.toString() << '\n';
-        
         std::cout << "Stack visual push test succeeded.\n";
     }
 
@@ -33,7 +34,7 @@ namespace Tests
     {
         FreeStack<int> stack;
 
-        const int numEntries = 65537;
+        const int numEntries = ITERATIONS;
         for (int i = 0; i < numEntries; i++)
             stack.pushBack(i);
 
@@ -54,8 +55,26 @@ namespace Tests
         stackPopTest();
     }
 
+    void listInsertTest()
+    {
+        FreeList<int> list;
+
+        for (int i = 0; i < ITERATIONS; i++)
+            list.insert(i);
+
+        std::cout << "Insertion test complete.\n";
+    }
+
+    void listTests()
+    {
+        listInsertTest();
+
+        std::cout << "List tests completed.\n";
+    }
+
     void runTests()
     {
         stackTests();
+        listTests();
     }
 }

@@ -9,8 +9,7 @@ class FreeStack : public ParentContainer<TypeName, FixedSize>
 {
 public:
     FreeStack();
-    ~FreeStack();
-
+    
     inline TypeName& top() const;
 
     /* Inserts the given element to the top of the stack. */
@@ -24,12 +23,6 @@ template<typename TypeName, const size_t FixedSize>
 FreeStack<TypeName, FixedSize>::FreeStack()
     : ParentContainer<TypeName, FixedSize>()
 {
-}
-
-template<typename TypeName, const size_t FixedSize>
-FreeStack<TypeName, FixedSize>::~FreeStack()
-{
-    ParentContainer<TypeName, FixedSize>::~ParentContainer();
 }
 
 template<typename TypeName, const size_t FixedSize>
