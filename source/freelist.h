@@ -20,6 +20,22 @@ public:
     /* Clears the freelist. */
     void clear();
 
+    /* ----------------------------------------------------------------------------------------- */
+    /* Stack interface.                                                                          */
+    /* ----------------------------------------------------------------------------------------- */
+    /* This enables the FreeList to be used as a stack. Do not mix with freelist interface.      */
+    
+    /* Inserts an element to the back of the list, returning its index. */
+    int pushBack();
+
+    /* Inserts the given element to the back of the list, returning its index. */
+    int pushBack(const TypeName& value);
+
+    /* Removes the element from the back of the list. */
+    void popBack();
+
+
+
     /* Returns a reference to the element at the given index. */
     inline TypeName& at(const int index) const;
 
