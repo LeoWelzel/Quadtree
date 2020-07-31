@@ -35,7 +35,7 @@ namespace Tests
 
         const int numEntries = 65537;
         for (int i = 0; i < numEntries; i++)
-            stack.pushBack();
+            stack.pushBack(i);
 
         for (int i = 0; i < numEntries; i++)
         {

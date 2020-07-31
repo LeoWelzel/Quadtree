@@ -13,9 +13,6 @@ public:
 
     inline TypeName& top() const;
 
-    /* Pushes an element to the top of the stack. */
-    void pushBack();
-
     /* Inserts the given element to the top of the stack. */
     void pushBack(const TypeName& value);
 
@@ -46,34 +43,22 @@ inline TypeName& FreeStack<TypeName, FixedSize>::top() const
 }
 
 template<typename TypeName, const size_t FixedSize>
-void FreeStack<TypeName, FixedSize>::pushBack()
+void FreeStack<TypeName, FixedSize>::pushBack(const TypeName& value)
 {
-    const int newPosition = this->numElements + 1;
+    const int newPosition = this->numElements++;
 
     /* Reallocate if needed. */
     if (newPosition >= this->capacity)
     {
         this->reallocate();
-
-        #ifdef ASSERTIONS
-            assert(newPosition < this->capacity);
-        #endif
     }
-
-    this->numElements++;
-}
-
-template<typename TypeName, const size_t FixedSize>
-void FreeStack<TypeName, FixedSize>::pushBack(const TypeName& value)
-{
-    this->pushBack();
 
     #ifdef ASSERTIONS
         /* Over-caution with pointers. */
-        assert(this->numElements < this->capacity);
+        assert(this->numElements <= this->capacity);
     #endif
 
-    this->dataPtr[this->numElements - 1] = value;
+    this->dataPtr[newPosition] = value;
 }
 
 template<typename TypeName, const size_t FixedSize>

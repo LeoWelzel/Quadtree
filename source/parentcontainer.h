@@ -85,7 +85,7 @@ void ParentContainer<TypeName, FixedSize>::reallocate()
     tempDebugging = temp;
 
     /* Populate with existing contents. */
-    std::copy(this->dataPtr, this->dataPtr + this->numElements / 2, temp);
+    std::copy(this->dataPtr, this->dataPtr + this->capacity / 2, temp);
 
     if (this->dataPtr != this->fixed)
         delete[] this->dataPtr;
