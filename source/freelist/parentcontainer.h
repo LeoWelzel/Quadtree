@@ -15,8 +15,6 @@ public:
     /* Returns the number of elements stored in the container. */
     int size() const;
 
-    
-
 protected:
     /* Allocate memory on the stack to avoid heap allocation until necessary. */
     TypeName fixed[FixedSize];
@@ -29,6 +27,26 @@ protected:
 
     /* The number of elements stored. */
     int numElements;
+};
+
+template<typename TypeName, const size_t FixedSize>
+ParentContainer<TypeName, FixedSize>::ParentContainer()
+    : dataPtr(fixed), capacity(FixedSize), numElements(0)
+{
+}
+
+template<typename TypeName, const size_t FixedSize>
+ParentContainer<TypeName, FixedSize>::~ParentContainer()
+{
+    /* Free dynamically allocated memory. */
+    if (this->dataPtr != this->fixed)
+        delete[] this->dataPtr;
+}
+
+template<typename TypeName, const size_t FixedSize>
+int ParentContainer<TypeName, FixedSize>::size() const
+{
+    return this->numElements;
 }
 
 #endif

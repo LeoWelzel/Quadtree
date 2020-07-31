@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include "freelist.h"
+#include "freelist/freestack.h"
 
 int main()
 {
-    FreeList<int> freelist;
+    FreeStack<int> freeStack;
 
-    std::cout << "Freelist instantiated.\n";
+    std::cout << "Freestack instantiated with " << freeStack.size() << " elements.\n";
 }
