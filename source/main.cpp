@@ -1,6 +1,10 @@
 #include <iostream>
 
+#include "freelist.h"
+
 int main()
 {
-    std::cout << "Hello, World!\n";
+    FreeList<int> freelist;
+
+    std::cout << "Freelist instantiated.\n";
 }
