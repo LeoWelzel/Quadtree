@@ -4,5 +4,13 @@
 # Builds.
 bin/
 
+# Bespoke compilation system.
+pymake/
+compile and run.txt
+pycountlines.py
+pymake.py
+pymake.txt
+pymakereset.py
+
 # Logs.
 logs/

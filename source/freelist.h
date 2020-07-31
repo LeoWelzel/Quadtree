@@ -27,6 +27,23 @@ private:
 
     /* The index of the earliest free element in the freelist. */
     int freeElement;
+
+    /* The default value of freeElement, if no element has been removed from the "middle". */
+    static const int NONE_REMOVED = -1;
 };
+
+template<typename TypeName, const size_t FixedSize>
+FreeList<TypeName, FixedSize>::FreeList()
+    : dataPtr(fixed), capacity(FixedSize), numElements(0), freeElement(FreeList::NONE_REMOVED)
+{
+}
+
+template<typename TypeName, const size_t FixedSize>
+FreeList<TypeName, FixedSize>::~FreeList()
+{
+    /* Free dynamically allocated memory. */
+    if (this->dataPtr != this->fixed)
+        delete[] this->dataPtr;
+}
 
 #endif
