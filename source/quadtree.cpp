@@ -43,5 +43,68 @@ Quadtree::~Quadtree()
 
 int Quadtree::insert(QuadtreeCollider* colliderPtr)
 {
-    
+    FreeStack<QuadNodeData> leavesForInsertion;
+
+    // AWAITING: getLeaves() function.
+}
+
+void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
+    int colliderTop, int colliderBottom, int colliderLeft, int colliderRight) const
+{
+    /* Return early if collider not contained within boundaries. */
+    if (searchSpace.top <= colliderBottom || searchSpace.bottom > colliderTop ||
+        searchSpace.right <= colliderLeft || searchSpace.left > colliderBottom)
+        return;
+
+    /* Avoid recursion by using a stack instead. */
+    FreeStack<QuadNodeData> processingStack;
+
+    Quadtree::pushBackNode(&processingStack, this->rootNodeIndex, 0, this->treeTop,
+        this->treeBottom, this->treeLeft, this->treeRight);
+
+    while (processingStack.size() > 0)
+    {
+        const QuadNodeData topData = processingStack.top();
+        processingStack.popBack();
+
+        #ifdef ASSERTIONS
+            const int divisor = pow(2, topData.depth);
+            assert((topData.top - topData.bottom) == (this->treeTop - this->treeBottom) / divisor);
+            assert((topData.right - topData.left) == (this->treeRight - this->treeLeft) / divisor);
+        #endif
+
+        /* Push back all discovered leaf nodes. */
+        if (this->quadNodes.at(topData.quadNodeIndex).numElements != QuadNode::BRANCH_NODE)
+            output->pushBack(topData);
+        else
+        {
+            const int firstChild = this->quadNodes.at(topData.quadNodeIndex).firstChild,
+                halfX = topData.left + ((topData.right - topData.left) / 2),
+                halfY = topData.bottom + ((topData.top - topData.bottom) / 2);
+
+            if (colliderLeft < halfX)
+            {
+                /* Top left. */
+                if (colliderTop >= halfY)
+                    Quadtree::pushBackNode(&processingStack, firstChild, topData.depth + 1,
+                        topData.top, halfY, topData.left, halfX);
+                /* Bottom left. */
+                if (colliderBottom < halfY)
+                    Quadtree::pushBackNode(&processingStack, firstChild + 2, topData.depth + 1,
+                        halfY, topData.bottom, topData.left, halfX);
+            }
+            if (colliderRight >= halfX)
+            {
+                /* Top right. */
+                if (colliderTop >= halfY)
+                    Quadtree::pushBackNode(&processingStack, firstChild + 1, topData.depth + 1,
+                        topData.top, halfY, halfX, topData.right);
+                /* Bottom right. */
+                if (colliderBottom < halfY)
+                    Quadtree::pushBackNode(&processingStack, firstChild + 3, topData.depth + 1,
+                        halfY, topData.bottom, halfX, topData.right);
+            }
+        }
+        
+    }
 }

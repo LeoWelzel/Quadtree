@@ -5,6 +5,11 @@
 #include <cassert>
 
 #include "defs.h"
+
+#ifdef ASSERTIONS
+    #include <cmath>
+#endif
+
 #include "freelist.h"
 #include "freestack.h"
 #include "quadtreecollider.h"
@@ -59,6 +64,15 @@ public:
     FreeList<ElementNode> elementNodes;
 
 private:
+    /* Populates the stack with the quadnodedata objects for the leaf nodes containing some part */
+    /* of the given collider boundaries. */
+    void getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
+        int colliderTop, int colliderBottom, int colliderLeft, int colliderRight) const;
+
+    /* Helper that pushes back a QuadNodeData object with the given attributes. */
+    static inline void pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,
+        int top, int bottom, int left, int right);
+
     int treeTop, treeBottom, treeLeft, treeRight, maxDivisions, maxEltsPerNode;
 
     /* Stores the index of the tree root in the quadtree. This should be 0, 100% of the time. */
@@ -69,5 +83,15 @@ private:
     bool* queryTable;
     int queryTableSize;
 };
+
+inline void Quadtree::pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,
+    int top, int bottom, int left, int right)
+{
+    QuadNodeData data = QuadNodeData(
+        quadNodeIndex, depth, top, bottom, left, right
+    );
+
+    output->pushBack(data);
+}
 
 #endif
