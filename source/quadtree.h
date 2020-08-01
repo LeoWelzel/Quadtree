@@ -1,6 +1,9 @@
 #ifndef QUADTREE_H_INCLUDED
 #define QUADTREE_H_INCLUDED
 
+/* We will need to make certain assertions regardless of whether we are debugging. */
+#include <cassert>
+
 #include "defs.h"
 #include "freelist.h"
 #include "freestack.h"
@@ -55,7 +58,7 @@ public:
     FreeList<ElementNode> elementNodes;
 
 private:
-    int top, bottom, left, right, maxDivisions, maxEltsPerNode;
+    int treeTop, treeBottom, treeLeft, treeRight, maxDivisions, maxEltsPerNode;
 
     /* Stores the index of the tree root in the quadtree. This should be 0, 100% of the time. */
     int rootNodeIndex;
