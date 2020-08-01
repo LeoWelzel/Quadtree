@@ -14,8 +14,7 @@
 #include "freestack.h"
 #include "quadtreecollider.h"
 
-/* Stores all needed data about a single "element node" - a single collider element within a */
-/* specified quadnode. */
+/* Details a particular collider within a particular quadnode. */
 struct ElementNode
 {
     const static int NONE = -1;
@@ -25,7 +24,7 @@ struct ElementNode
     int next, colliderIndex;
 };
 
-/* Stores all needed data about a single quadnode. */
+/* Quadtree node. */
 struct QuadNode
 {
     const static int BRANCH_NODE = -1;
@@ -36,7 +35,7 @@ struct QuadNode
     int firstChild, numElements;
 };
 
-/* Stores a quadnode, as well as its boundaries and depth. */
+/* References a quadnode, as well as its boundaries and depth. */
 struct QuadNodeData
 {
     QuadNodeData();
@@ -56,7 +55,7 @@ public:
 
     /* Removes the collider from the quadtree. No shortcuts are taken if the collider is */
     /* already absent from the tree. */
-    void remove(QuadtreeCollider* colliderPtr);
+    void remove(QuadtreeCollider* colliderPtr, int colliderIndex);
 
     #ifdef TO_STRING
     std::string toString() const;
