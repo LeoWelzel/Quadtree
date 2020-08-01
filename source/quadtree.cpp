@@ -117,6 +117,48 @@ void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
     this->colliderPtrs.erase(colliderIndex);
 }
 
+void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices)
+{
+    FreeStack<int> toProcess;
+
+    toProcess.pushBack(this->rootNodeIndex);
+
+    while (toProcess.size())
+    {
+        const int quadNodeIndex = toProcess.top(),
+            numElements = this->quadNodes.at(quadNodeIndex).numElements,
+            first = this->quadNodes.at(quadNodeIndex).firstChild;
+
+        toProcess.popBack();
+
+        int newIndex;
+
+        /* In this case, there is a leaf node. */
+        if (numElements != QuadNode::BRANCH_NODE)
+            nodeIndices->pushBack(quadNodeIndex);
+        /* Otherwise, we push back the indices of all the quadnode children. */
+        else for (int i = 0; i < 4; i++)
+            toProcess.pushBack(first + i);
+    }
+}
+
+void Quadtree::clearElements()
+{
+    this->elementNodes.clear();
+    this->colliderPtrs.clear();
+
+    FreeStack<int> leafIndices;
+    this->getAllLeaves(&leafIndices);
+
+    const int numLeaves = leafIndices.size();
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        this->quadNodes.at(leafIndices.at(i)).firstChild = ElementNode::NONE;
+        this->quadNodes.at(leafIndices.at(i)).numElements = QuadNode::BRANCH_NODE;
+    }
+}
+
 void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
     int colliderTop, int colliderBottom, int colliderLeft, int colliderRight) const
 {

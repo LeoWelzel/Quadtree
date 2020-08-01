@@ -57,6 +57,12 @@ public:
     /* already absent from the tree. */
     void remove(QuadtreeCollider* colliderPtr, int colliderIndex);
 
+    /* Clears the quadtree of all inserted elements. */
+    void clearElements();
+
+    /* Populates the list with all the quadtree leaf indices. */
+    void getAllLeaves(FreeStack<int>* nodeIndices);
+
     #ifdef TO_STRING
     std::string toString() const;
     #endif
