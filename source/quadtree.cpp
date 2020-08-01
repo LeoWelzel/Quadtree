@@ -145,3 +145,76 @@ void Quadtree::nodeInsert(int colliderIndex, QuadNodeData data)
         // AWAITING: subdivideNode() function.
     }
 }
+
+void Quadtree::subdivideNode(const QuadNodeData& data)
+{
+    #ifdef ASSERTIONS
+        assert(data.depth < this->maxDivisions);
+        assert(this->quadNodes.at(data.quadNodeIndex).numElements > this->maxEltsPerNode);
+    #endif
+
+    /* Retrieve all currently present colliders. */
+    FreeStack<int> colliderIndices;
+
+    int currentElementIndex = this->quadNodes.at(data.quadNodeIndex).firstChild,
+        previousElementIndex;
+
+    /* Iterate over singly linked list, pushing all collider indices to the stack. */
+    while (currentElementIndex != ElementNode::NONE)
+    {
+        colliderIndices.pushBack(this->elementNodes.at(currentElementIndex).colliderIndex);
+
+        previousElementIndex = currentElementIndex;
+        currentElementIndex = this->elementNodes.at(currentElementIndex).next;
+
+        this->elementNodes.erase(previousElementIndex);
+    }
+
+    /* Allocate child nodes. */
+    const int newChild = this->quadNodes.insert();
+
+    #ifdef ASSERTIONS
+        assert(this->quadNodes.insert() == newChild + 1);
+        assert(this->quadNodes.insert() == newChild + 2);
+        assert(this->quadNodes.insert() == newChild + 3);
+    #else
+        this->quadNodes.insert();
+        this->quadNodes.insert();
+        this->quadNodes.insert();
+    #endif
+
+    /* Set all child nodes as empty. */
+    for (size_t i = 0; i < 4; i++)
+    {
+        this->quadNodes.at(newChild + i).firstChild = ElementNode::NONE;
+        this->quadNodes.at(newChild + i).numElements = 0;
+    }
+
+    /* Update original quadnode's attributes. */
+    this->quadNodes.at(data.quadNodeIndex).numElements = QuadNode::BRANCH_NODE;
+    this->quadNodes.at(data.quadNodeIndex).firstChild = newChild;
+
+    FreeStack<QuadNodeData> leavesForInsertion;
+
+    const int numColliders = colliderIndices.size();
+
+    /* Iterate over the colliders, inserting them into the leaf nodes as needed. */
+    for (int i = 0; i < numColliders; i++)
+    {
+        const int colliderIndex = colliderIndices.at(i);
+        const QuadtreeCollider* colliderPtr = this->colliderPtrs.at(colliderIndex);
+
+        this->getLeaves(
+            &leavesForInsertion, data, colliderPtr->top, colliderPtr->bottom, colliderPtr->left,
+            colliderPtr->right
+        );
+
+        const int numLeaves = leavesForInsertion.size();
+
+        for (int j = 0; j < numLeaves; j++)
+            Quadtree::nodeInsert(colliderIndex, leavesForInsertion.at(j));
+
+        /* Empty the stack for re-use next iteration. */
+        leavesForInsertion.clear();
+    }
+}

@@ -80,7 +80,8 @@ private:
     /* Inserts the specified collider into the specified quadnode. */
     void nodeInsert(int colliderIndex, QuadNodeData data);
 
-    
+    /* Subdivides the specified quadnode, populating the new children with the needed elements. */
+    void subdivideNode(const QuadNodeData& data);
 
     int treeTop, treeBottom, treeLeft, treeRight, maxDivisions, maxEltsPerNode;
 

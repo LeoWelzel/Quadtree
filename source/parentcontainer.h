@@ -22,6 +22,9 @@ public:
     /* Returns a reference to the element at the specified index, without bounds checking. */
     inline TypeName& unsafeReference(const int index) const;
 
+    /* Clears the container. */
+    virtual void clear();
+
     #ifdef DEBUGGING
         int getCapacity() const
         {
@@ -125,6 +128,12 @@ template<typename TypeName, const size_t FixedSize>
 inline TypeName& ParentContainer<TypeName, FixedSize>::unsafeReference(const int index) const
 {
     return this->dataPtr[index];
+}
+
+template<typename TypeName, const size_t FixedSize>
+void ParentContainer<TypeName, FixedSize>::clear()
+{
+    this->numElements = 0;
 }
 
 #endif

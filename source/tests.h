@@ -7,6 +7,7 @@
 
 #include "freestack.h"
 #include "freelist.h"
+#include "quadtree.h"
 
 namespace Tests
 {

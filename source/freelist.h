@@ -22,6 +22,9 @@ public:
     /* Erases the element from the specified index in the freelist. */
     void erase(const int index);
 
+    /* Clears the freelist. */
+    void clear();
+
 private:
     /* The index of the earliest freed element in the freelist. */
     int freeElement;
@@ -75,6 +78,13 @@ void FreeList<TypeName, FixedSize>::erase(int index)
     /* Reconnect the linked list. */
     *tempPtr = this->freeElement;
     this->freeElement = index;
+}
+
+template<typename TypeName, const size_t FixedSize>
+void FreeList<TypeName, FixedSize>::clear()
+{
+    this->numElements = 0;
+    this->freeElement = NONE_REMOVED;
 }
 
 #endif
