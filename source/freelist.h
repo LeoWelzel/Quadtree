@@ -22,13 +22,6 @@ public:
     /* Erases the element from the specified index in the freelist. */
     void erase(const int index);
 
-    /* Returns a reference to the element at the specified index. */
-    /* Peforms bounds checking, but is unable to check if this index is for a removed element. */
-    inline TypeName& at(const int index) const;
-
-    /* Returns a reference to the element at the specified index, without bounds checking. */
-    inline TypeName& unsafeReference(const int index) const;
-
 private:
     /* The index of the earliest freed element in the freelist. */
     int freeElement;
@@ -82,20 +75,6 @@ void FreeList<TypeName, FixedSize>::erase(int index)
     /* Reconnect the linked list. */
     *tempPtr = this->freeElement;
     this->freeElement = index;
-}
-
-template<typename TypeName, const size_t FixedSize>
-inline TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
-{
-    assert(index >= 0);
-    assert(index < this->capacity);
-    return this->dataPtr[index];
-}
-
-template<typename TypeName, const size_t FixedSize>
-inline TypeName& FreeList<TypeName, FixedSize>::unsafeReference(const int index) const
-{
-    return this->dataPtr[index];
 }
 
 #endif

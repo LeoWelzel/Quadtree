@@ -44,6 +44,7 @@ class Quadtree
 {
 public:
     Quadtree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode);
+    ~Quadtree();
 
     /* Inserts the collider into the quadtree, returning its index in the collider freelist. */
     int insert(QuadtreeCollider* colliderPtr);

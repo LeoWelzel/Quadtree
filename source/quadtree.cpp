@@ -25,7 +25,7 @@ Quadtree::Quadtree(int top, int bottom, int left, int right, int maxDivisions, i
     : treeTop(top), treeBottom(bottom), treeLeft(left), treeRight(right), maxDivisions(maxDivisions),
       maxEltsPerNode(maxEltsPerNode), rootNodeIndex(0),
 
-      queryTable(nullptr), queryTableSize(-1)
+      queryTable(nullptr), queryTableSize(0)
 {
     this->rootNodeIndex = this->quadNodes.insert();
     assert(this->rootNodeIndex == 0);
@@ -33,4 +33,15 @@ Quadtree::Quadtree(int top, int bottom, int left, int right, int maxDivisions, i
     /* Initialise root node. */
     this->quadNodes.at(this->rootNodeIndex).firstChild = ElementNode::NONE;
     this->quadNodes.at(this->rootNodeIndex).numElements = 0;
+}
+
+Quadtree::~Quadtree()
+{
+    if (this->queryTableSize)
+        delete[] this->queryTable;
+}
+
+int Quadtree::insert(QuadtreeCollider* colliderPtr)
+{
+    
 }

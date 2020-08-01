@@ -15,6 +15,13 @@ public:
     /* Returns the number of elements stored in the container. */
     int size() const;
 
+    /* Returns a reference to the element at the specified index. */
+    /* Peforms bounds checking, but is unable to check if this index is for a removed element. */
+    inline TypeName& at(const int index) const;
+
+    /* Returns a reference to the element at the specified index, without bounds checking. */
+    inline TypeName& unsafeReference(const int index) const;
+
     #ifdef DEBUGGING
         int getCapacity() const
         {
@@ -36,7 +43,7 @@ public:
         #endif
     #endif
 
-// protected:
+protected:
     /* Makes space for an element at the back of the array, returning its index. */
     int pushBack();
 
@@ -107,6 +114,20 @@ void ParentContainer<TypeName, FixedSize>::reallocate()
         delete[] this->dataPtr;
 
     this->dataPtr = temp;
+}
+
+template<typename TypeName, const size_t FixedSize>
+inline TypeName& ParentContainer<TypeName, FixedSize>::at(const int index) const
+{
+    assert(index >= 0);
+    assert(index < this->capacity);
+    return this->dataPtr[index];
+}
+
+template<typename TypeName, const size_t FixedSize>
+inline TypeName& ParentContainer<TypeName, FixedSize>::unsafeReference(const int index) const
+{
+    return this->dataPtr[index];
 }
 
 #endif
