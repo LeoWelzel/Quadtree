@@ -58,6 +58,10 @@ public:
     /* already absent from the tree. */
     void remove(QuadtreeCollider* colliderPtr);
 
+    #ifdef TO_STRING
+    std::string toString() const;
+    #endif
+
     // TODO: assess the safety of using a freelist with pointers.
     FreeList<QuadtreeCollider*> colliderPtrs;
     FreeList<QuadNode> quadNodes;

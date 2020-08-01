@@ -45,7 +45,27 @@ int Quadtree::insert(QuadtreeCollider* colliderPtr)
 {
     FreeStack<QuadNodeData> leavesForInsertion;
 
-    // AWAITING: getLeaves() function.
+    /* Retrieve all leaf nodes into which this collider needs to be inserted. */
+    this->getLeaves(
+        &leavesForInsertion, 
+        QuadNodeData(
+            this->rootNodeIndex, 0, this->treeTop, this->treeBottom, this->treeLeft,
+            this->treeRight
+        ),
+        colliderPtr->top, colliderPtr->bottom, colliderPtr->left, colliderPtr->right
+    );
+
+    const int numLeaves = leavesForInsertion.size(),
+        colliderIndex = this->colliderPtrs.insert();
+
+    this->colliderPtrs.at(colliderIndex) = colliderPtr;
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        // AWAITING: nodeInsert() function
+    }
+
+    return colliderIndex;
 }
 
 void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
@@ -105,6 +125,5 @@ void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpa
                         halfY, topData.bottom, halfX, topData.right);
             }
         }
-        
     }
 }
