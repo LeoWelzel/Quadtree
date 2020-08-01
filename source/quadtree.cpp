@@ -61,9 +61,7 @@ int Quadtree::insert(QuadtreeCollider* colliderPtr)
     this->colliderPtrs.at(colliderIndex) = colliderPtr;
 
     for (int i = 0; i < numLeaves; i++)
-    {
-        // AWAITING: nodeInsert() function
-    }
+        this->nodeInsert(colliderIndex, leavesForInsertion.at(i));
 
     return colliderIndex;
 }
@@ -125,5 +123,25 @@ void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpa
                         halfY, topData.bottom, halfX, topData.right);
             }
         }
+    }
+}
+
+void Quadtree::nodeInsert(int colliderIndex, QuadNodeData data)
+{
+    QuadNode& quadNode = this->quadNodes.at(data.quadNodeIndex);
+
+    /* Create element node and push it back in the quadnode list. */
+    const int newElementNodeIndex = this->elementNodes.insert();
+
+    this->elementNodes.at(newElementNodeIndex).colliderIndex = colliderIndex;
+
+    /* Join the linked list together such that the new element node is at the front. */
+    this->elementNodes.at(newElementNodeIndex).next = quadNode.firstChild;
+    quadNode.firstChild = newElementNodeIndex;
+
+    /* Subdivide the node if needed. */
+    if (++quadNode.numElements > this->maxEltsPerNode && data.depth < this->maxDivisions)
+    {
+        // AWAITING: subdivideNode() function.
     }
 }

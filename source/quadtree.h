@@ -77,6 +77,11 @@ private:
     static inline void pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,
         int top, int bottom, int left, int right);
 
+    /* Inserts the specified collider into the specified quadnode. */
+    void nodeInsert(int colliderIndex, QuadNodeData data);
+
+    
+
     int treeTop, treeBottom, treeLeft, treeRight, maxDivisions, maxEltsPerNode;
 
     /* Stores the index of the tree root in the quadtree. This should be 0, 100% of the time. */
