@@ -137,6 +137,12 @@ void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
     }
 }
 
+void Quadtree::getAllLeafNodeDatas(FreeStack<QuadNodeData>* nodeDatas) const
+{
+    return this->getLeaves(nodeDatas, this->rootData, this->treeTop, this->treeBottom,
+           this->treeLeft, this->treeRight);
+}
+
 void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right)
 {
     FreeStack<QuadNodeData> leaves;

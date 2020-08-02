@@ -63,6 +63,9 @@ public:
     /* Populates the list with all the quadtree leaf indices. */
     void getAllLeaves(FreeStack<int>* nodeIndices) const;
 
+    /* Populates the list with the quadnode datas corresponding to the leaf indices. */
+    void getAllLeafNodeDatas(FreeStack<QuadNodeData>* nodeDatas) const;
+
     /* Cleans up the quadtree. */
     void cleanup();
 
