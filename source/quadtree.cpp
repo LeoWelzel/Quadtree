@@ -140,6 +140,7 @@ void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
 void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right)
 {
     FreeStack<QuadNodeData> leaves;
+    FreeStack<int> usedColliderIndices;
 
     this->getLeaves(&leaves, this->rootData, top, bottom, left, right);
 
@@ -175,13 +176,20 @@ void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, i
                 currentColliderPtr->top >= bottom &&
                 currentColliderPtr->bottom <= top)
             {
+                /* Update table. */
                 this->queryTable[colliderIndex] = 1;
-                // TODO: find some system to null out the query table again afterward
+                usedColliderIndices.pushBack(colliderIndex);
+                output.pushBack(currentColliderPtr);
             }
+            elementIndex = this->elementNodes.at(elementIndex).next;
         }
-        // currentColliderPtr = this->colliderPtrs.at()
-
     }
+
+    /* Unmark the table entries for the inserted elements. */
+    const int numAddedElements = usedColliderIndices.size();
+
+    for (int i = 0; i < numAddedElements; i++)
+        this->queryTable[usedColliderIndices.at(i)] = 0;
 }
 
 void Quadtree::clearElements()
