@@ -161,7 +161,26 @@ void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, i
 
     for (int i = 0; i < numLeaves; i++)
     {
-        
+        elementIndex = this->quadNodes.at(leaves.at(i).quadNodeIndex).firstChild;
+
+        while (elementIndex != ElementNode::NONE)
+        {
+            colliderIndex = this->elementNodes.at(elementIndex).colliderIndex;
+            currentColliderPtr = this->colliderPtrs.at(colliderIndex);
+
+            /* Append to the list if it intersects the boundaries and hasn't been added yet. */
+            if (!this->queryTable[colliderIndex]  &&
+                currentColliderPtr->left <= right &&
+                currentColliderPtr->right >= left &&
+                currentColliderPtr->top >= bottom &&
+                currentColliderPtr->bottom <= top)
+            {
+                this->queryTable[colliderIndex] = 1;
+                // TODO: find some system to null out the query table again afterward
+            }
+        }
+        // currentColliderPtr = this->colliderPtrs.at()
+
     }
 }
 
