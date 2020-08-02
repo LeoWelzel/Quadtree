@@ -117,7 +117,7 @@ void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
     this->colliderPtrs.erase(colliderIndex);
 }
 
-void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices)
+void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
 {
     FreeStack<int> toProcess;
 

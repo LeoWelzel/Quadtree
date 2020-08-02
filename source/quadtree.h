@@ -61,7 +61,13 @@ public:
     void clearElements();
 
     /* Populates the list with all the quadtree leaf indices. */
-    void getAllLeaves(FreeStack<int>* nodeIndices);
+    void getAllLeaves(FreeStack<int>* nodeIndices) const;
+
+    /* Cleans up the quadtree. */
+    void cleanup();
+
+    /* Populates the list with pointers to the colliders inside the boundaries */
+    void query(FreeList<QuadtreeCollider*> output, int top, int bottom, int left, int right) const;
 
     #ifdef TO_STRING
     std::string toString() const;
