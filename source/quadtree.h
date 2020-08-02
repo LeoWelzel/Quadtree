@@ -67,10 +67,10 @@ public:
     void cleanup();
 
     /* Populates the list with pointers to the colliders inside the boundaries */
-    void query(FreeList<QuadtreeCollider*> output, int top, int bottom, int left, int right) const;
+    void query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right);
 
     #ifdef TO_STRING
-    std::string toString() const;
+        std::string toString() const;
     #endif
 
     // TODO: assess the safety of using a freelist with pointers.
@@ -103,6 +103,8 @@ private:
     /* the query space is not a single quadnode. */
     bool* queryTable;
     int queryTableSize;
+
+    QuadNodeData rootData;
 };
 
 inline void Quadtree::pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,

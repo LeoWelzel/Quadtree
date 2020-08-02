@@ -33,6 +33,9 @@ Quadtree::Quadtree(int top, int bottom, int left, int right, int maxDivisions, i
     /* Initialise root node. */
     this->quadNodes.at(this->rootNodeIndex).firstChild = ElementNode::NONE;
     this->quadNodes.at(this->rootNodeIndex).numElements = 0;
+
+    this->rootData = QuadNodeData(this->rootNodeIndex, 0, this->treeTop, this->treeBottom,
+        this->treeLeft, this->treeRight);
 }
 
 Quadtree::~Quadtree()
@@ -47,12 +50,8 @@ int Quadtree::insert(QuadtreeCollider* colliderPtr)
 
     /* Retrieve all leaf nodes into which this collider needs to be inserted. */
     this->getLeaves(
-        &leavesForInsertion, 
-        QuadNodeData(
-            this->rootNodeIndex, 0, this->treeTop, this->treeBottom, this->treeLeft,
-            this->treeRight
-        ),
-        colliderPtr->top, colliderPtr->bottom, colliderPtr->left, colliderPtr->right
+        &leavesForInsertion, this->rootData, colliderPtr->top, colliderPtr->bottom,
+        colliderPtr->left, colliderPtr->right
     );
 
     const int numLeaves = leavesForInsertion.size(),
@@ -71,12 +70,8 @@ void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
     FreeStack<QuadNodeData> leavesForRemoval;
 
     this->getLeaves(
-        &leavesForRemoval, 
-        QuadNodeData(
-            this->rootNodeIndex, 0, this->treeTop, this->treeBottom, this->treeLeft,
-            this->treeRight
-        ),
-        colliderPtr->top, colliderPtr->bottom, colliderPtr->left, colliderPtr->right
+        &leavesForRemoval, this->rootData, colliderPtr->top, colliderPtr->bottom,
+        colliderPtr->left, colliderPtr->right
     );
 
     const int numLeaves = leavesForRemoval.size();
@@ -139,6 +134,34 @@ void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
         /* Otherwise, we push back the indices of all the quadnode children. */
         else for (int i = 0; i < 4; i++)
             toProcess.pushBack(first + i);
+    }
+}
+
+void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right)
+{
+    FreeStack<QuadNodeData> leaves;
+
+    this->getLeaves(&leaves, this->rootData, top, bottom, left, right);
+
+    /* Re-size the buffer if needed. */
+    if (this->queryTableSize != this->colliderPtrs.size())
+    {
+        if (this->queryTable)
+            delete[] this->queryTable;
+
+        this->queryTableSize = this->colliderPtrs.size();
+        this->queryTable = new bool[this->queryTableSize] { 0 };
+    }
+
+    /* Iterate over the leaves. */
+    const int numLeaves = leaves.size();
+    int elementIndex, colliderIndex;
+
+    QuadtreeCollider* currentColliderPtr{ nullptr };
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        
     }
 }
 
