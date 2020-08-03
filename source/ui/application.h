@@ -4,6 +4,22 @@
 #include <SFML/Graphics.hpp>
 
 #include "../defs.h"
+#include "../quadtree.h"
+
+namespace
+{
+    struct Agent
+    {
+        Agent(const QuadtreeCollider& collider, int xMotion, int yMotion);
+
+        QuadtreeCollider collider;
+        int xMotion, yMotion;
+    };
+
+    bool collidersIntersect(const QuadtreeCollider* collider1, const QuadtreeCollider* collider2);
+
+    void handleCollision(Agent& agent1, Agent& agent2);
+}
 
 class Application
 {
@@ -19,7 +35,7 @@ private:
 
     std::string title;
 
-    
+    void loopAction(), handleEvents();
 };
 
 #endif
