@@ -117,6 +117,52 @@ void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
     this->colliderPtrs.erase(colliderIndex);
 }
 
+void Quadtree::cleanup()
+{
+    /* Return early if the root node is a leaf. */
+    if (this->quadNodes.at(this->rootNodeIndex).numElements != QuadNode::BRANCH_NODE)
+        return;
+
+    FreeStack<int> toProcess;
+
+    toProcess.pushBack(this->rootNodeIndex);
+
+    while (toProcess.size())
+    {
+        const int nodeIndex = toProcess.top(),
+            firstChild = this->quadNodes.at(nodeIndex).firstChild;
+
+        int numEmptyChildren = 0;
+
+        toProcess.popBack();
+
+        for (int i = 0; i < 4; i++)
+        {
+            const int childIndex = firstChild + i,
+                numElements = this->quadNodes.at(childIndex).numElements;
+
+            if (numElements == 0)
+                numEmptyChildren++;
+            else if (numElements == QuadNode::BRANCH_NODE)
+                toProcess.pushBack(childIndex);
+        }
+
+        if (numEmptyChildren == 4)
+        {
+            /* Remove all four children in reverse order so the memory vacancies can be reclaimed
+             * in subsequent iterations in proper order. */
+            this->quadNodes.erase(firstChild + 3);
+            this->quadNodes.erase(firstChild + 2);
+            this->quadNodes.erase(firstChild + 1);
+            this->quadNodes.erase(firstChild);
+
+            /* Indicate that the node is now a leaf. */
+            this->quadNodes.at(nodeIndex).numElements = 0;
+            this->quadNodes.at(nodeIndex).firstChild = ElementNode::NONE;
+        }
+    }
+}
+
 void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
 {
     FreeStack<int> toProcess;
@@ -216,7 +262,7 @@ void Quadtree::clearElements()
     for (int i = 0; i < numLeaves; i++)
     {
         this->quadNodes.at(leafIndices.at(i)).firstChild = ElementNode::NONE;
-        this->quadNodes.at(leafIndices.at(i)).numElements = QuadNode::BRANCH_NODE;
+        this->quadNodes.at(leafIndices.at(i)).numElements = 0;
     }
 }
 
@@ -282,19 +328,20 @@ void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpa
 
 void Quadtree::nodeInsert(int colliderIndex, QuadNodeData data)
 {
-    QuadNode& quadNode = this->quadNodes.at(data.quadNodeIndex);
+    QuadNode* quadNode = &this->quadNodes.at(data.quadNodeIndex);
 
     /* Create element node and push it back in the quadnode list. */
     const int newElementNodeIndex = this->elementNodes.insert();
 
-    this->elementNodes.at(newElementNodeIndex).colliderIndex = colliderIndex;
+    ElementNode& newElement = this->elementNodes.at(newElementNodeIndex);
 
     /* Join the linked list together such that the new element node is at the front. */
-    this->elementNodes.at(newElementNodeIndex).next = quadNode.firstChild;
-    quadNode.firstChild = newElementNodeIndex;
+    newElement.colliderIndex = colliderIndex;
+    newElement.next = quadNode->firstChild;
+    quadNode->firstChild = newElementNodeIndex;
 
     /* Subdivide the node if needed. */
-    if (++quadNode.numElements > this->maxEltsPerNode && data.depth < this->maxDivisions)
+    if (++quadNode->numElements > this->maxEltsPerNode && data.depth < this->maxDivisions)
         this->subdivideNode(data);
 }
 
@@ -314,9 +361,9 @@ void Quadtree::subdivideNode(const QuadNodeData& data)
     /* Iterate over singly linked list, pushing all collider indices to the stack. */
     while (currentElementIndex != ElementNode::NONE)
     {
-        colliderIndices.pushBack(this->elementNodes.at(currentElementIndex).colliderIndex);
-
         previousElementIndex = currentElementIndex;
+
+        colliderIndices.pushBack(this->elementNodes.at(currentElementIndex).colliderIndex);
         currentElementIndex = this->elementNodes.at(currentElementIndex).next;
 
         this->elementNodes.erase(previousElementIndex);
@@ -364,7 +411,7 @@ void Quadtree::subdivideNode(const QuadNodeData& data)
         const int numLeaves = leavesForInsertion.size();
 
         for (int j = 0; j < numLeaves; j++)
-            Quadtree::nodeInsert(colliderIndex, leavesForInsertion.at(j));
+            this->nodeInsert(colliderIndex, leavesForInsertion.at(j));
 
         /* Empty the stack for re-use next iteration. */
         leavesForInsertion.clear();

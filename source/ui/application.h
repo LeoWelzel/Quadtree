@@ -56,7 +56,7 @@ public:
     void initialise(), run();
 
 private:
-    bool initialised;
+    bool initialised, running;
     float xMultiplier, yMultiplier;
     int agentWidth, agentRows, agentColumns, treeWidth, treeHeight;
 

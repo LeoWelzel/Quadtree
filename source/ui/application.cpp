@@ -28,9 +28,9 @@ namespace
         #endif
 
         return collider2->left   <= collider1->right  && 
-            collider2->right  >= collider1->left   &&
-            collider2->top    >= collider1->bottom &&
-            collider2->bottom <= collider1->top;
+               collider2->right  >= collider1->left   &&
+               collider2->top    >= collider1->bottom &&
+               collider2->bottom <= collider1->top;
     }
 
     void handleCollision(QuadtreeCollider* collider1, QuadtreeCollider* collider2)
@@ -56,7 +56,7 @@ namespace
     }
 }
 
-PRNG Application::randomGenerator = PRNG(984356546);
+PRNG Application::randomGenerator = PRNG(23543298);
 
 Application::Application(size_t width, size_t height, size_t frameRate, std::string title,
     int agentWidth, int agentRows, int agentColumns, sf::Color backgroundColour,
@@ -64,8 +64,9 @@ Application::Application(size_t width, size_t height, size_t frameRate, std::str
     : width(width), height(height), frameRate(frameRate), title(title),
       backgroundColour(backgroundColour), agentWidth(agentWidth), agentRows(agentRows),
       agentColumns(agentColumns), quadtree(treeHeight, 0, 0, treeWidth, 8, 8), initialised(false),
-      windowPtr(nullptr), xMultiplier(this->width / float(treeWidth)),
-      yMultiplier(this->height / float(treeHeight)), treeWidth(treeWidth), treeHeight(treeHeight)
+      windowPtr(nullptr), xMultiplier(width / float(treeWidth)),
+      yMultiplier(height / float(treeHeight)), treeWidth(treeWidth), treeHeight(treeHeight),
+      running(false)
 {
 }
 
@@ -129,30 +130,37 @@ void Application::run()
 
 void Application::loopAction()
 {
-    this->windowPtr->clear();
+    this->windowPtr->clear(this->backgroundColour);
 
     this->lineVertexArray.clear();
     this->quadVertexArray.clear();
 
-    this->moveColliders();
-    this->applyCollisions();
+    if (this->running)
+    {
+        this->moveColliders();
+        this->applyCollisions();
+    }
 
     this->drawColliders();
+
+    this->windowPtr->display();
 }
 
 void Application::moveColliders()
 {
     for (int i = 0; i < this->colliders.size(); i++)
     {
-        QuadtreeCollider collider = this->colliders.at(i);
+        QuadtreeCollider& collider = this->colliders.at(i);
 
-        if (collider.left < 0 || 
-            collider.right > this->treeWidth)
-            (collider.xMotion) = -(collider.xMotion);
-            
-        if (collider.bottom < 0 || 
-            collider.top > this->treeHeight)
-            (collider.yMotion) = -(collider.yMotion);
+        if (collider.left < 0 && collider.xMotion < 0)
+            collider.xMotion = -collider.xMotion;
+        if (collider.right > this->treeWidth && collider.xMotion > 0)
+            collider.xMotion = -collider.xMotion;
+
+        if (collider.bottom < 0 && collider.yMotion < 0)
+            collider.yMotion = -collider.yMotion;
+        if (collider.top > this->height && collider.yMotion > 0)
+            collider.yMotion = -collider.yMotion;
 
         collider.left += collider.xMotion;
         collider.right += collider.xMotion;
@@ -187,7 +195,8 @@ void Application::applyCollisions()
                 collider1 = this->quadtree.colliderPtrs.at(this->quadtree.elementNodes.at(element1).colliderIndex);
                 collider2 = this->quadtree.colliderPtrs.at(this->quadtree.elementNodes.at(element2).colliderIndex);
 
-                handleCollision(collider1, collider2);
+                if (collidersIntersect(collider1, collider2))
+                    handleCollision(collider1, collider2);
 
                 element2 = this->quadtree.elementNodes.at(element2).next;
             }
@@ -216,11 +225,13 @@ void Application::drawColliders()
 
         APPEND_VERTEX(this->quadVertexArray, left, top, sf::Color(0x7fabdb));
         APPEND_VERTEX(this->quadVertexArray, left, bottom, sf::Color(0x7fabdb));
-        APPEND_VERTEX(this->quadVertexArray, right, top, sf::Color(0x7fabdb));
         APPEND_VERTEX(this->quadVertexArray, right, bottom, sf::Color(0x7fabdb));
+        APPEND_VERTEX(this->quadVertexArray, right, top, sf::Color(0x7fabdb));
     }
 
     #undef APPEND_VERTEX
+
+    this->windowPtr->draw(this->quadVertexArray);
 }
 
 void Application::handleEvents()
@@ -231,5 +242,10 @@ void Application::handleEvents()
     {
         if (event.type == sf::Event::Closed)
             this->windowPtr->close();
+        else if (event.type == sf::Event::KeyPressed)
+        {
+            if (event.key.code == sf::Keyboard::Space || event.key.code == sf::Keyboard::K)
+                this->running = !this->running;
+        }
     }
 }
