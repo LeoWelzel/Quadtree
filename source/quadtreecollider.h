@@ -14,6 +14,10 @@ struct QuadtreeCollider
 
     int top, bottom, left, right;
 
+    #ifdef APPLICATION
+    int xMotion, yMotion;
+    #endif
+
     #ifdef TO_STRING
         std::string toString() const;
     #endif

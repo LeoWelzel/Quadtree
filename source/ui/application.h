@@ -28,14 +28,6 @@ namespace
         template<typename T> T sparse_rand();
     };
 
-    struct Agent
-    {
-        Agent(const QuadtreeCollider& collider, int xMotion, int yMotion);
-
-        QuadtreeCollider collider;
-        int xMotion, yMotion;
-    };
-
     inline timePoint getCurrentTime()
     {
         return std::chrono::high_resolution_clock::now();
@@ -49,7 +41,7 @@ namespace
 
     bool collidersIntersect(const QuadtreeCollider* collider1, const QuadtreeCollider* collider2);
 
-    void handleCollision(Agent& agent1, Agent& agent2);
+    void handleCollision(QuadtreeCollider* collider1, QuadtreeCollider* collider2);
 }
 
 class Application
@@ -66,7 +58,7 @@ public:
 private:
     bool initialised;
     float xMultiplier, yMultiplier;
-    int agentWidth, agentRows, agentColumns;
+    int agentWidth, agentRows, agentColumns, treeWidth, treeHeight;
 
     size_t width, height, frameRate;
     std::string title;
@@ -75,10 +67,12 @@ private:
     sf::Color backgroundColour;
     sf::VertexArray quadVertexArray, lineVertexArray;
     
-    FreeStack<Agent> agents;
+    FreeStack<QuadtreeCollider> colliders;
     Quadtree quadtree;
 
     static PRNG randomGenerator;
+
+    void moveColliders(), applyCollisions();
     
     void loopAction(), handleEvents();
 };

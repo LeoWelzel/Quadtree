@@ -2,6 +2,7 @@
 #define DEFS_H_INCLUDED
 
 #define DEBUGGING
+#define APPLICATION
 
 #ifdef DEBUGGING
     #define ASSERTIONS

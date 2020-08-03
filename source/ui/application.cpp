@@ -20,11 +20,6 @@ namespace
         return T(rand64());
     }
 
-    Agent::Agent(const QuadtreeCollider& collider, int xMotion, int yMotion)
-        : collider(collider), xMotion(xMotion), yMotion(yMotion)
-    {
-    }
-
     bool collidersIntersect(const QuadtreeCollider* collider1, const QuadtreeCollider* collider2)
     {
         #ifdef ASSERTIONS
@@ -38,25 +33,25 @@ namespace
             collider2->bottom <= collider1->top;
     }
 
-    void handleCollision(Agent& agent1, Agent& agent2)
+    void handleCollision(QuadtreeCollider* collider1, QuadtreeCollider* collider2)
     {
-        int xDiff = (agent2.collider.right + agent2.collider.left -
-             agent1.collider.right - agent1.collider.left) / 2;
+        int xDiff = (collider2->right + collider2->left -
+             collider1->right - collider1->left) / 2;
 
-        int yDiff = (agent2.collider.top + agent2.collider.bottom -
-            agent1.collider.top - agent1.collider.bottom) / 2;
+        int yDiff = (collider2->top + collider2->bottom -
+            collider1->top - collider1->bottom) / 2;
 
-        double agent1Mag = sqrt(agent1.xMotion * agent1.xMotion + agent1.yMotion * agent1.yMotion),
-            agent2Mag = sqrt(agent2.xMotion * agent2.xMotion + agent2.yMotion * agent2.yMotion),
+        double collider1Mag = sqrt(collider1->xMotion * collider1->xMotion + collider1->yMotion * collider1->yMotion),
+            collider2Mag = sqrt(collider2->xMotion * collider2->xMotion + collider2->yMotion * collider2->yMotion),
             newVectorMag = sqrt(xDiff * xDiff + yDiff * yDiff);
 
         if (newVectorMag)
         {
-            agent2.xMotion = round(xDiff * agent1Mag / newVectorMag);
-            agent2.yMotion = round(yDiff * agent1Mag / newVectorMag);
+            collider2->xMotion = round(xDiff * collider1Mag / newVectorMag);
+            collider2->yMotion = round(yDiff * collider1Mag / newVectorMag);
 
-            agent1.xMotion = -agent2.xMotion;
-            agent1.yMotion = -agent2.yMotion;
+            collider1->xMotion = -collider2->xMotion;
+            collider1->yMotion = -collider2->yMotion;
         }
     }
 }
@@ -70,7 +65,7 @@ Application::Application(size_t width, size_t height, size_t frameRate, std::str
       backgroundColour(backgroundColour), agentWidth(agentWidth), agentRows(agentRows),
       agentColumns(agentColumns), quadtree(treeHeight, 0, 0, treeWidth, 8, 8), initialised(false),
       windowPtr(nullptr), xMultiplier(this->width / float(treeWidth)),
-      yMultiplier(this->height / float(treeHeight))
+      yMultiplier(this->height / float(treeHeight)), treeWidth(treeWidth), treeHeight(treeHeight)
 {
 }
 
@@ -101,8 +96,9 @@ void Application::initialise()
                 y * totalBlockSize, y * totalBlockSize + agentWidth, x * totalBlockSize,
                 x * totalBlockSize + agentWidth
             );
-            this->agents.pushBack(Agent(collider, randomGenerator.rand<int>() % 40,
-                randomGenerator.rand<int>() % 40));
+            collider.xMotion = randomGenerator.rand<int>() % 40;
+            collider.yMotion = randomGenerator.rand<int>() % 40;
+            this->colliders.pushBack(collider);
         }
     }
 
@@ -129,6 +125,82 @@ void Application::run()
     double seconds = getTimeDiff(startTime, endTime);
 
     std::cout << numFrames << " produced in " << seconds << " seconds. Average FPS: " << numFrames / seconds << ".\n";
+}
+
+void Application::loopAction()
+{
+    this->windowPtr->clear();
+
+    this->lineVertexArray.clear();
+    this->quadVertexArray.clear();
+
+    FreeStack<QuadNodeData> dataStack;
+
+    this->moveColliders();
+    this->applyCollisions();
+
+    this->quadtree.getAllLeafNodeDatas(&dataStack);
+}
+
+void Application::moveColliders()
+{
+    for (int i = 0; i < this->colliders.size(); i++)
+    {
+        QuadtreeCollider collider = this->colliders.at(i);
+
+        if (collider.left < 0 || 
+            collider.right > this->treeWidth)
+            (collider.xMotion) = -(collider.xMotion);
+            
+        if (collider.bottom < 0 || 
+            collider.top > this->treeHeight)
+            (collider.yMotion) = -(collider.yMotion);
+
+        collider.left += collider.xMotion;
+        collider.right += collider.xMotion;
+        collider.top += collider.yMotion;
+        collider.bottom += collider.yMotion;
+
+        this->quadtree.insert(&collider);
+    }
+}
+
+void Application::applyCollisions()
+{
+    FreeStack<int> treeLeafIndices;
+    this->quadtree.getAllLeaves(&treeLeafIndices);
+
+    const int numLeaves = treeLeafIndices.size();
+    int element1 = 0, element2 = 0, currentNodeIndex;
+
+    QuadtreeCollider* collider1{ nullptr }, *collider2{ nullptr };
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        currentNodeIndex = treeLeafIndices.at(i);
+        element1 = this->quadtree.quadNodes.at(currentNodeIndex).firstChild;
+
+        while (element1 != ElementNode::NONE)
+        {
+            element2 = this->quadtree.elementNodes.at(element1).next;
+
+            while (element2 != ElementNode::NONE)
+            {
+                collider1 = this->quadtree.colliderPtrs.at(this->quadtree.elementNodes.at(element1).colliderIndex);
+                collider2 = this->quadtree.colliderPtrs.at(this->quadtree.elementNodes.at(element2).colliderIndex);
+
+                handleCollision(collider1, collider2);
+
+                element2 = this->quadtree.elementNodes.at(element2).next;
+            }
+
+
+            element1 = this->quadtree.elementNodes.at(element1).next;
+        }
+    }
+    
+    this->quadtree.cleanup();
+    this->quadtree.clearElements();
 }
 
 void Application::handleEvents()
