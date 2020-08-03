@@ -27,6 +27,11 @@ Quadtree::Quadtree(int top, int bottom, int left, int right, int maxDivisions, i
 
       queryTable(nullptr), queryTableSize(0)
 {
+    #ifdef ASSERTIONS
+        assert(this->treeTop > this->treeBottom);
+        assert(this->treeRight > this->treeLeft);
+    #endif
+
     this->rootNodeIndex = this->quadNodes.insert();
     assert(this->rootNodeIndex == 0);
 
