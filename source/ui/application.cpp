@@ -134,12 +134,10 @@ void Application::loopAction()
     this->lineVertexArray.clear();
     this->quadVertexArray.clear();
 
-    FreeStack<QuadNodeData> dataStack;
-
     this->moveColliders();
     this->applyCollisions();
 
-    this->quadtree.getAllLeafNodeDatas(&dataStack);
+    this->drawColliders();
 }
 
 void Application::moveColliders()
@@ -194,13 +192,35 @@ void Application::applyCollisions()
                 element2 = this->quadtree.elementNodes.at(element2).next;
             }
 
-
             element1 = this->quadtree.elementNodes.at(element1).next;
         }
     }
     
     this->quadtree.cleanup();
     this->quadtree.clearElements();
+}
+
+void Application::drawColliders()
+{
+    #define APPEND_VERTEX(vertexArray, x, y, colour)        \
+    vertexArray.append(sf::Vertex(sf::Vector2f(x, y), colour));
+
+    for (int i = 0; i < this->colliders.size(); i++)
+    {
+        QuadtreeCollider collider = this->colliders.at(i);
+
+        float left = collider.left * this->xMultiplier,
+            right = collider.right * this->xMultiplier,
+            top = collider.top * this->yMultiplier,
+            bottom = collider.bottom * this->yMultiplier;
+
+        APPEND_VERTEX(this->quadVertexArray, left, top, sf::Color(0x7fabdb));
+        APPEND_VERTEX(this->quadVertexArray, left, bottom, sf::Color(0x7fabdb));
+        APPEND_VERTEX(this->quadVertexArray, right, top, sf::Color(0x7fabdb));
+        APPEND_VERTEX(this->quadVertexArray, right, bottom, sf::Color(0x7fabdb));
+    }
+
+    #undef APPEND_VERTEX
 }
 
 void Application::handleEvents()

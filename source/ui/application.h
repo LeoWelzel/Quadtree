@@ -72,7 +72,7 @@ private:
 
     static PRNG randomGenerator;
 
-    void moveColliders(), applyCollisions();
+    void moveColliders(), applyCollisions(), drawColliders();
     
     void loopAction(), handleEvents();
 };
