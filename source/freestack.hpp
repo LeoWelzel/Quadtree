@@ -1,8 +1,8 @@
-#ifndef FREESTACK_H_INCLUDED
-#define FREESTACK_H_INCLUDED
+#ifndef FREESTACK_HPP_INCLUDED
+#define FREESTACK_HPP_INCLUDED
 
-#include "defs.h"
-#include "parentcontainer.h"
+#include "defs.hpp"
+#include "parentcontainer.hpp"
 
 template<typename TypeName, const size_t FixedSize = 128>
 class FreeStack : public ParentContainer<TypeName, FixedSize>

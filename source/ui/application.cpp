@@ -1,4 +1,4 @@
-#include "application.h"
+#include "application.hpp"
 
 namespace
 {
@@ -26,6 +26,11 @@ namespace
             assert(collider1);
             assert(collider2);
         #endif
+
+        bool debugging1 = collider2->left   <= collider1->right,
+             debugging2 = collider2->right  >= collider1->left,
+             debugging3 = collider2->top    >= collider1->bottom,
+             debugging4 = collider2->bottom <= collider1->top;
 
         return collider2->left   <= collider1->right  && 
                collider2->right  >= collider1->left   &&
@@ -94,7 +99,7 @@ void Application::initialise()
         for (int y = 0; y < this->agentRows; y++)
         {
             QuadtreeCollider collider = QuadtreeCollider(
-                y * totalBlockSize, y * totalBlockSize + agentWidth, x * totalBlockSize,
+                y * totalBlockSize + agentWidth, y * totalBlockSize, x * totalBlockSize,
                 x * totalBlockSize + agentWidth
             );
             collider.xMotion = randomGenerator.rand<int>() % 40;
@@ -138,6 +143,9 @@ void Application::loopAction()
     if (this->running)
     {
         this->moveColliders();
+
+        std::cout << "Moved colliders.\n";
+
         this->applyCollisions();
     }
 
@@ -148,6 +156,7 @@ void Application::loopAction()
 
 void Application::moveColliders()
 {
+    const int numColliders = this->colliders.size();
     for (int i = 0; i < this->colliders.size(); i++)
     {
         QuadtreeCollider& collider = this->colliders.at(i);
@@ -159,7 +168,7 @@ void Application::moveColliders()
 
         if (collider.bottom < 0 && collider.yMotion < 0)
             collider.yMotion = -collider.yMotion;
-        if (collider.top > this->height && collider.yMotion > 0)
+        if (collider.top > this->treeHeight && collider.yMotion > 0)
             collider.yMotion = -collider.yMotion;
 
         collider.left += collider.xMotion;
@@ -169,6 +178,7 @@ void Application::moveColliders()
 
         this->quadtree.insert(&collider);
     }
+    std::cout << "Exited loop.\n";
 }
 
 void Application::applyCollisions()

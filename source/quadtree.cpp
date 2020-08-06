@@ -1,4 +1,4 @@
-#include "quadtree.h"
+#include "quadtree.hpp"
 
 ElementNode::ElementNode(int next, int colliderIndex)
     : next(next), colliderIndex(colliderIndex)

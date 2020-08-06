@@ -1,5 +1,5 @@
-#ifndef APPLICATION_H_INCLUDED
-#define APPLICATION_H_INCLUDED
+#ifndef APPLICATION_HPP_INCLUDED
+#define APPLICATION_HPP_INCLUDED
 
 #include <ctime>
 #include <cstdlib>
@@ -9,8 +9,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "../defs.h"
-#include "../quadtree.h"
+#include "../defs.hpp"
+#include "../quadtree.hpp"
 
 namespace
 {

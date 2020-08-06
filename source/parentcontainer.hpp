@@ -1,9 +1,9 @@
-#ifndef PARENT_CONTAINER_H_INCLUDED
-#define PARENT_CONTAINER_H_INCLUDED
+#ifndef PARENT_CONTAINER_HPP_INCLUDED
+#define PARENT_CONTAINER_HPP_INCLUDED
 
 #include <cstddef>
 
-#include "defs.h"
+#include "defs.hpp"
 
 template<typename TypeName, const size_t FixedSize = 128>
 class ParentContainer

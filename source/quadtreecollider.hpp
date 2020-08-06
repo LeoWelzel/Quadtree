@@ -1,7 +1,7 @@
-#ifndef COLLIDER_H_INCLUDED
-#define COLLIDER_H_INCLUDED
+#ifndef COLLIDER_HPP_INCLUDED
+#define COLLIDER_HPP_INCLUDED
 
-#include "defs.h"
+#include "defs.hpp"
 
 /* Rectangle used to indicate the boundaries of a collider. Such a structure can also be used */
 /* to house any other type of polygon. */

@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include "ui/application.h"
+#include "ui/application.hpp"
 
 void runApplication()
 {
-    Application application = Application(500, 500, 300, "Application", 256, 30, 30, sf::Color(0, 11, 45), 16384, 16384);
+    Application application = Application(500, 500, 300, "Application", 256, 6, 5, sf::Color(0, 11, 45), 16384, 16384);
     application.run();
 }
 

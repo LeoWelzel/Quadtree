@@ -1,4 +1,4 @@
-#include "quadtreecollider.h"
+#include "quadtreecollider.hpp"
 
 QuadtreeCollider::QuadtreeCollider()
     : top(0), bottom(0), left(0), right(0)

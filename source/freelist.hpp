@@ -1,11 +1,11 @@
-#ifndef FREELIST_H_INCLUDED
-#define FREELIST_H_INCLUDED
+#ifndef FREELIST_HPP_INCLUDED
+#define FREELIST_HPP_INCLUDED
 
 #include <cstddef>
 #include <cassert>
 
-#include "defs.h"
-#include "parentcontainer.h"
+#include "defs.hpp"
+#include "parentcontainer.hpp"
 
 template<typename TypeName, const size_t FixedSize = 128>
 class FreeList : public ParentContainer<TypeName, FixedSize>

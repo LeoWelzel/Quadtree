@@ -1,18 +1,18 @@
-#ifndef QUADTREE_H_INCLUDED
-#define QUADTREE_H_INCLUDED
+#ifndef QUADTREE_HPP_INCLUDED
+#define QUADTREE_HPP_INCLUDED
 
 /* We will need to make certain assertions regardless of whether we are debugging. */
 #include <cassert>
 
-#include "defs.h"
+#include "defs.hpp"
 
 #ifdef ASSERTIONS
     #include <cmath>
 #endif
 
-#include "freelist.h"
-#include "freestack.h"
-#include "quadtreecollider.h"
+#include "freelist.hpp"
+#include "freestack.hpp"
+#include "quadtreecollider.hpp"
 
 /* Details a particular collider within a particular quadnode. */
 struct ElementNode

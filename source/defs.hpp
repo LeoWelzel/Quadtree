@@ -1,5 +1,5 @@
-#ifndef DEFS_H_INCLUDED
-#define DEFS_H_INCLUDED
+#ifndef DEFS_HPP_INCLUDED
+#define DEFS_HPP_INCLUDED
 
 #define DEBUGGING
 #define APPLICATION
