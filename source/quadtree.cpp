@@ -1,12 +1,12 @@
 #include "quadtree.hpp"
 
-ElementNode::ElementNode(int next, int colliderIndex)
-    : next(next), colliderIndex(colliderIndex)
+QuadNode::QuadNode(int firstChild, int numElements)
+    : firstChild(firstChild), numElements(numElements)
 {
 }
 
-QuadNode::QuadNode(int firstChild, int numElements)
-    : firstChild(firstChild), numElements(numElements)
+ElementNode::ElementNode(int next, int colliderIndex)
+    : next(next), colliderIndex(colliderIndex)
 {
 }
 
@@ -16,53 +16,103 @@ QuadNodeData::QuadNodeData()
 }
 
 QuadNodeData::QuadNodeData(int quadNodeIndex, int depth, int top, int bottom, int left, int right)
-    : quadNodeIndex(quadNodeIndex), depth(depth), top(top), bottom(bottom), left(left),
-      right(right)
+    : quadNodeIndex(quadNodeIndex), depth(depth), top(top), bottom(bottom), left(left), right(right)
 {
 }
 
-Quadtree::Quadtree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode)
-    : treeTop(top), treeBottom(bottom), treeLeft(left), treeRight(right), maxDivisions(maxDivisions),
-      maxEltsPerNode(maxEltsPerNode), rootNodeIndex(0),
-
-      queryTable(nullptr), queryTableSize(0)
+QuadTree::QuadTree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode)
+    : topBound(top), bottomBound(bottom), leftBound(left), rightBound(right),
+      maxDivisions(maxDivisions), maxEltsPerNode(maxEltsPerNode), queryTable(new bool[FREELIST_FIXED_SIZE] { 0 }),
+      queryTableSize(FREELIST_FIXED_SIZE)
 {
+    this->rootNodeIndex = this->quadNodes.insert();
+    
     #ifdef ASSERTIONS
-        assert(this->treeTop > this->treeBottom);
-        assert(this->treeRight > this->treeLeft);
+        assert(this->rootNodeIndex == 0);
     #endif
 
-    this->rootNodeIndex = this->quadNodes.insert();
-    assert(this->rootNodeIndex == 0);
+    QuadNode& rootNode = this->quadNodes.at(this->rootNodeIndex);
 
-    /* Initialise root node. */
-    this->quadNodes.at(this->rootNodeIndex).firstChild = ElementNode::NONE;
-    this->quadNodes.at(this->rootNodeIndex).numElements = 0;
-
-    this->rootData = QuadNodeData(this->rootNodeIndex, 0, this->treeTop, this->treeBottom,
-        this->treeLeft, this->treeRight);
+    rootNode.firstChild = ElementNode::NONE;
+    rootNode.numElements = 0;
 }
 
-Quadtree::~Quadtree()
+QuadTree::~QuadTree()
 {
-    if (this->queryTableSize)
-        delete[] this->queryTable;
+    this->elementNodes.~FreeList();
+    this->quadNodes.~FreeList();
+    this->colliderPtrs.~FreeList();
+ 
+    delete[] this->queryTable;
 }
 
-int Quadtree::insert(QuadtreeCollider* colliderPtr)
+#ifdef TO_STRING
+std::string QuadNodeData::toString() const
 {
-    FreeStack<QuadNodeData> leavesForInsertion;
+    return "(" + std::to_string(this->depth) + ": " + std::to_string(this->top) + ", "
+        + std::to_string(this->bottom) + ", " + std::to_string(this->left) + ", "
+        + std::to_string(this->right) + "). "; 
+}
 
-    /* Retrieve all leaf nodes into which this collider needs to be inserted. */
-    this->getLeaves(
-        &leavesForInsertion, this->rootData, colliderPtr->top, colliderPtr->bottom,
-        colliderPtr->left, colliderPtr->right
-    );
+std::string QuadTree::nodeToString(int nodeIndex, int indentation) const
+{
+    std::string output = "";
+    for (size_t i = 0; i < indentation; i++)
+        output += "  ";
 
-    const int numLeaves = leavesForInsertion.size(),
-        colliderIndex = this->colliderPtrs.insert();
+    const int firstChild = this->quadNodes.at(nodeIndex).firstChild;
+    output += "{ ";
 
-    this->colliderPtrs.at(colliderIndex) = colliderPtr;
+    if (this->quadNodes.at(nodeIndex).numElements == QuadNode::BRANCH_NODE)
+    {
+        output += "BRANCH:\n";
+
+        for (int i = 0; i < 4; i++)
+            output += this->nodeToString(firstChild + i, indentation + 1);
+    }
+    else
+    {
+        output += "LEAF:\n" + this->elementToString(firstChild, indentation + 1);
+    }
+    output += "}\n";
+    return output;
+}
+
+std::string QuadTree::elementToString(int elementIndex, int indentation) const
+{
+    std::string output = "";
+    for (size_t i = 0; i < indentation; i++)
+        output += "  ";
+
+    if (elementIndex >= 0)
+    output += "0x" + std::to_string(int(this->elementNodes.at(elementIndex).colliderPtr)) + ": ";
+
+    while (elementIndex != ElementNode::NONE)
+    {
+        output += this->elementNodes.at(elementIndex).colliderPtr->toString() + ", ";
+        elementIndex = this->elementNodes.at(elementIndex).next;
+    }
+
+    return output;
+}
+
+std::string QuadTree::toString() const
+{
+    return this->nodeToString(this->rootNodeIndex, 0);
+}
+#endif
+
+int QuadTree::insert(QuadTreeCollider* collider)
+{
+    FreeList<QuadNodeData> leavesForInsertion;
+
+    this->getLeaves(&leavesForInsertion, collider->top, collider->bottom, collider->left, collider->right, this->rootNodeIndex, 0,
+        this->topBound, this->bottomBound, this->leftBound, this->rightBound);
+
+    const int numLeaves = leavesForInsertion.size();
+
+    const int colliderIndex = this->colliderPtrs.insert();
+    this->colliderPtrs.at(colliderIndex) = collider;
 
     for (int i = 0; i < numLeaves; i++)
         this->nodeInsert(colliderIndex, leavesForInsertion.at(i));
@@ -70,44 +120,40 @@ int Quadtree::insert(QuadtreeCollider* colliderPtr)
     return colliderIndex;
 }
 
-void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
+void QuadTree::remove(QuadTreeCollider* collider, int colliderIndex)
 {
-    FreeStack<QuadNodeData> leavesForRemoval;
+    FreeList<QuadNodeData> leavesForRemoval;
 
-    this->getLeaves(
-        &leavesForRemoval, this->rootData, colliderPtr->top, colliderPtr->bottom,
-        colliderPtr->left, colliderPtr->right
-    );
+    this->getLeaves(&leavesForRemoval, collider->top, collider->bottom, collider->left, collider->right, this->rootNodeIndex, 0,
+        this->topBound, this->bottomBound, this->leftBound, this->rightBound);
 
     const int numLeaves = leavesForRemoval.size();
 
+    /* Remove from all leaves that the collider occupies. */
     for (int i = 0; i < numLeaves; i++)
     {
         const QuadNodeData currentLeaf = leavesForRemoval.at(i);
 
-        int currentElementIndex = this->quadNodes.at(currentLeaf.quadNodeIndex).firstChild,
-            previousElementIndex = ElementNode::NONE;
+        int currentElement = this->quadNodes.at(currentLeaf.quadNodeIndex).firstChild, previous = ElementNode::NONE;
 
-        /* Iterate forward until required to stop. */
-        while (currentElementIndex != ElementNode::NONE &&
-            this->elementNodes.at(currentElementIndex).colliderIndex != colliderIndex)
+        while (currentElement != ElementNode::NONE && this->elementNodes.at(currentElement).colliderIndex != colliderIndex)
         {
-            previousElementIndex = currentElementIndex;
-            currentElementIndex = this->elementNodes.at(currentElementIndex).next;
+            previous = currentElement;
+            currentElement = this->elementNodes.at(currentElement).next;
         }
 
-        if (currentElementIndex != ElementNode::NONE)
+        if (currentElement != ElementNode::NONE)
         {
-            const int nextIndex = this->elementNodes.at(currentElementIndex).next;
-
+            const int nextIndex = this->elementNodes.at(currentElement).next;
+            
             /* In this case, we found the element immediately. */
-            if (previousElementIndex == ElementNode::NONE)
-                this->quadNodes.at(currentElementIndex).firstChild = nextIndex;
-            /* Otherwise we skip over this element in the linked list. */
+            if (previous == ElementNode::NONE)
+                this->quadNodes.at(currentLeaf.quadNodeIndex).firstChild = nextIndex;
+            /* Otherwise we simply skip over the element in the linked list. */
             else
-                this->elementNodes.at(previousElementIndex).next = nextIndex;
-
-            this->elementNodes.erase(currentElementIndex);
+                this->elementNodes.at(previous).next = nextIndex;
+            
+            this->elementNodes.erase(currentElement);
             /* Decrement element node count. */
             this->quadNodes.at(currentLeaf.quadNodeIndex).numElements--;
         }
@@ -117,22 +163,128 @@ void Quadtree::remove(QuadtreeCollider* colliderPtr, int colliderIndex)
     this->colliderPtrs.erase(colliderIndex);
 }
 
-void Quadtree::cleanup()
+void QuadTree::query(FreeList<QuadTreeCollider*>* output, int top, int bottom, int left, int right)
 {
-    /* Return early if the root node is a leaf. */
-    if (this->quadNodes.at(this->rootNodeIndex).numElements != QuadNode::BRANCH_NODE)
-        return;
+    FreeList<QuadNodeData> includedLeaves;
+    FreeList<int> usedIndices;
 
-    FreeStack<int> toProcess;
+    this->getLeaves(&includedLeaves, top, bottom, left, right, this->rootNodeIndex, 0, this->topBound, this->bottomBound, this->leftBound, this->rightBound);
 
-    toProcess.pushBack(this->rootNodeIndex);
+    /* Re-size the buffer if needed. */
+    if (this->queryTableSize != this->colliderPtrs.size())
+    {
+        delete[] this->queryTable;
+
+        this->queryTableSize = this->colliderPtrs.size();
+        this->queryTable = new bool[this->queryTableSize] { 0 };
+    }
+
+    /* Iterate over the leaves. */
+    const int numLeaves = includedLeaves.size();
+    int elementIndex, colliderIndex;
+
+    QuadTreeCollider* currentColliderPtr{ nullptr };
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        elementIndex = this->quadNodes.at(includedLeaves.at(i).quadNodeIndex).firstChild;
+
+        while (elementIndex != ElementNode::NONE)
+        {
+            colliderIndex = this->elementNodes.at(elementIndex).colliderIndex;
+            currentColliderPtr = this->colliderPtrs.at(colliderIndex);
+
+            /* Append to the list if it intersects the given boundaries and hasn't yet been added. */
+            if (!this->queryTable[colliderIndex] && 
+                currentColliderPtr->left <= right &&
+                currentColliderPtr->right >= left &&
+                currentColliderPtr->top >= bottom &&
+                currentColliderPtr->bottom <= top)
+            {
+                this->queryTable[colliderIndex] = 1;
+                usedIndices.at(usedIndices.pushBack()) = colliderIndex;
+                output->at(output->pushBack()) = currentColliderPtr;
+            }
+
+            elementIndex = this->elementNodes.at(elementIndex).next;
+        }
+    }
+
+    /* Unmark the elements that were inserted. */
+    const int numAddedElements = usedIndices.size();
+    for (int i = 0; i < numAddedElements; i++)
+        this->queryTable[usedIndices.at(i)] = 0;
+}
+
+void QuadTree::clearElements()
+{
+    this->elementNodes.clear();
+    this->colliderPtrs.clear();
+
+    FreeList<int> leafIndices;
+    this->getAllLeaves(&leafIndices);
+
+    const int numLeaves = leafIndices.size();
+
+    for (int i = 0; i < numLeaves; i++)
+    {
+        this->quadNodes.at(leafIndices.at(i)).firstChild = ElementNode::NONE;
+        this->quadNodes.at(leafIndices.at(i)).numElements = 0;
+    }
+}
+
+void QuadTree::getAllLeaves(FreeList<int>* nodeIndices)
+{
+    FreeList<int> toProcess;
+
+    toProcess.at(toProcess.pushBack()) = this->rootNodeIndex;
 
     while (toProcess.size())
     {
-        const int nodeIndex = toProcess.top(),
+        const int quadNodeIndex = toProcess.at(toProcess.size() - 1),
+            numElements = this->quadNodes.at(quadNodeIndex).numElements,
+            first = this->quadNodes.at(quadNodeIndex).firstChild;
+
+        toProcess.popBack();
+
+        int newIndex;
+
+        /* In this case, we have a leaf node. */
+        if (numElements != QuadNode::BRANCH_NODE)
+        {
+            nodeIndices->at(nodeIndices->pushBack()) = quadNodeIndex;
+        }
+        /* Otherwise, we push back the indices of all the quadnode children. */
+        else for (int i = 0; i < 4; i++)
+        {
+            toProcess.at(toProcess.pushBack()) = first + i;
+        }
+    }
+}
+
+void QuadTree::getAllLeafDatas(FreeList<QuadNodeData>* quadNodeDatas)
+{
+    this->getLeaves(quadNodeDatas, this->topBound, this->bottomBound,
+        this->leftBound, this->rightBound, 0, 0, this->topBound,
+        this->bottomBound, this->leftBound, this->rightBound);
+}
+
+void QuadTree::cleanup()
+{
+    /* If the root node is a leaf, exit immediately. */
+    if (this->quadNodes.at(this->rootNodeIndex).numElements != QuadNode::BRANCH_NODE)
+        return;
+    
+    FreeList<int> toProcess;
+
+    toProcess.at(toProcess.pushBack()) = this->rootNodeIndex;
+
+    while (toProcess.size())
+    {
+        const int nodeIndex = toProcess.at(toProcess.size() - 1),
             firstChild = this->quadNodes.at(nodeIndex).firstChild;
 
-        int numEmptyChildren = 0;
+        int emptyChildren = 0;
 
         toProcess.popBack();
 
@@ -142,12 +294,12 @@ void Quadtree::cleanup()
                 numElements = this->quadNodes.at(childIndex).numElements;
 
             if (numElements == 0)
-                numEmptyChildren++;
+                emptyChildren++;
             else if (numElements == QuadNode::BRANCH_NODE)
-                toProcess.pushBack(childIndex);
+                toProcess.at(toProcess.pushBack()) = childIndex;
         }
-
-        if (numEmptyChildren == 4)
+    
+        if (emptyChildren == 4)
         {
             /* Remove all four children in reverse order so the memory vacancies can be reclaimed
              * in subsequent iterations in proper order. */
@@ -163,137 +315,34 @@ void Quadtree::cleanup()
     }
 }
 
-void Quadtree::getAllLeaves(FreeStack<int>* nodeIndices) const
+void QuadTree::getLeaves(FreeList<QuadNodeData>* output, int colliderTop, int colliderBottom, int colliderLeft, int colliderRight,
+        int quadNodeIndex, int depth, int top, int bottom, int left, int right)
 {
-    FreeStack<int> toProcess;
-
-    toProcess.pushBack(this->rootNodeIndex);
-
-    while (toProcess.size())
-    {
-        const int quadNodeIndex = toProcess.top(),
-            numElements = this->quadNodes.at(quadNodeIndex).numElements,
-            first = this->quadNodes.at(quadNodeIndex).firstChild;
-
-        toProcess.popBack();
-
-        int newIndex;
-
-        /* In this case, there is a leaf node. */
-        if (numElements != QuadNode::BRANCH_NODE)
-            nodeIndices->pushBack(quadNodeIndex);
-        /* Otherwise, we push back the indices of all the quadnode children. */
-        else for (int i = 0; i < 4; i++)
-            toProcess.pushBack(first + i);
-    }
-}
-
-void Quadtree::getAllLeafNodeDatas(FreeStack<QuadNodeData>* nodeDatas) const
-{
-    return this->getLeaves(nodeDatas, this->rootData, this->treeTop, this->treeBottom,
-           this->treeLeft, this->treeRight);
-}
-
-void Quadtree::query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right)
-{
-    FreeStack<QuadNodeData> leaves;
-    FreeStack<int> usedColliderIndices;
-
-    this->getLeaves(&leaves, this->rootData, top, bottom, left, right);
-
-    /* Re-size the buffer if needed. */
-    if (this->queryTableSize != this->colliderPtrs.size())
-    {
-        if (this->queryTable)
-            delete[] this->queryTable;
-
-        this->queryTableSize = this->colliderPtrs.size();
-        this->queryTable = new bool[this->queryTableSize] { 0 };
-    }
-
-    /* Iterate over the leaves. */
-    const int numLeaves = leaves.size();
-    int elementIndex, colliderIndex;
-
-    QuadtreeCollider* currentColliderPtr{ nullptr };
-
-    for (int i = 0; i < numLeaves; i++)
-    {
-        elementIndex = this->quadNodes.at(leaves.at(i).quadNodeIndex).firstChild;
-
-        while (elementIndex != ElementNode::NONE)
-        {
-            colliderIndex = this->elementNodes.at(elementIndex).colliderIndex;
-            currentColliderPtr = this->colliderPtrs.at(colliderIndex);
-
-            /* Append to the list if it intersects the boundaries and hasn't been added yet. */
-            if (!this->queryTable[colliderIndex]  &&
-                currentColliderPtr->left <= right &&
-                currentColliderPtr->right >= left &&
-                currentColliderPtr->top >= bottom &&
-                currentColliderPtr->bottom <= top)
-            {
-                /* Update table. */
-                this->queryTable[colliderIndex] = 1;
-                usedColliderIndices.pushBack(colliderIndex);
-                output.pushBack(currentColliderPtr);
-            }
-            elementIndex = this->elementNodes.at(elementIndex).next;
-        }
-    }
-
-    /* Unmark the table entries for the inserted elements. */
-    const int numAddedElements = usedColliderIndices.size();
-
-    for (int i = 0; i < numAddedElements; i++)
-        this->queryTable[usedColliderIndices.at(i)] = 0;
-}
-
-void Quadtree::clearElements()
-{
-    this->elementNodes.clear();
-    this->colliderPtrs.clear();
-
-    FreeStack<int> leafIndices;
-    this->getAllLeaves(&leafIndices);
-
-    const int numLeaves = leafIndices.size();
-
-    for (int i = 0; i < numLeaves; i++)
-    {
-        this->quadNodes.at(leafIndices.at(i)).firstChild = ElementNode::NONE;
-        this->quadNodes.at(leafIndices.at(i)).numElements = 0;
-    }
-}
-
-void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
-    int colliderTop, int colliderBottom, int colliderLeft, int colliderRight) const
-{
-    /* Return early if collider not contained within boundaries. */
-    if (searchSpace.top <= colliderBottom || searchSpace.bottom > colliderTop ||
-        searchSpace.right <= colliderLeft || searchSpace.left > colliderBottom)
+    /* Return early if the collider is not contained within the boundaries. */
+    if (top <= colliderBottom ||
+        bottom > colliderTop ||
+        right <= colliderLeft ||
+        left > colliderRight)
         return;
 
-    /* Avoid recursion by using a stack instead. */
-    FreeStack<QuadNodeData> processingStack;
+    FreeList<QuadNodeData> processingStack;
 
-    Quadtree::pushBackNode(&processingStack, this->rootNodeIndex, 0, this->treeTop,
-        this->treeBottom, this->treeLeft, this->treeRight);
+    pushBackNode(&processingStack, quadNodeIndex, depth, top, bottom, left, right);
 
     while (processingStack.size() > 0)
     {
-        const QuadNodeData topData = processingStack.top();
+        const QuadNodeData topData = processingStack.at(processingStack.size() - 1);
         processingStack.popBack();
-
+        
         #ifdef ASSERTIONS
             const int divisor = pow(2, topData.depth);
-            assert((topData.top - topData.bottom) == (this->treeTop - this->treeBottom) / divisor);
-            assert((topData.right - topData.left) == (this->treeRight - this->treeLeft) / divisor);
+            assert((topData.top - topData.bottom) == (this->topBound - this->bottomBound) / divisor);
+            assert((topData.right - topData.left) == (this->rightBound - this->leftBound) / divisor);
         #endif
 
-        /* Push back all discovered leaf nodes. */
+        /* In this case, we've found a leaf node. */
         if (this->quadNodes.at(topData.quadNodeIndex).numElements != QuadNode::BRANCH_NODE)
-            output->pushBack(topData);
+            output->at(output->pushBack()) = topData;
         else
         {
             const int firstChild = this->quadNodes.at(topData.quadNodeIndex).firstChild,
@@ -304,84 +353,75 @@ void Quadtree::getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpa
             {
                 /* Top left. */
                 if (colliderTop >= halfY)
-                    Quadtree::pushBackNode(&processingStack, firstChild, topData.depth + 1,
-                        topData.top, halfY, topData.left, halfX);
+                    pushBackNode(&processingStack, firstChild, topData.depth + 1, topData.top, halfY, topData.left, halfX);
                 /* Bottom left. */
                 if (colliderBottom < halfY)
-                    Quadtree::pushBackNode(&processingStack, firstChild + 2, topData.depth + 1,
-                        halfY, topData.bottom, topData.left, halfX);
+                    pushBackNode(&processingStack, firstChild + 2, topData.depth + 1, halfY, topData.bottom, topData.left, halfX);
             }
             if (colliderRight >= halfX)
             {
                 /* Top right. */
                 if (colliderTop >= halfY)
-                    Quadtree::pushBackNode(&processingStack, firstChild + 1, topData.depth + 1,
-                        topData.top, halfY, halfX, topData.right);
+                    pushBackNode(&processingStack, firstChild + 1, topData.depth + 1, topData.top, halfY, halfX, topData.right);
                 /* Bottom right. */
                 if (colliderBottom < halfY)
-                    Quadtree::pushBackNode(&processingStack, firstChild + 3, topData.depth + 1,
-                        halfY, topData.bottom, halfX, topData.right);
+                    pushBackNode(&processingStack, firstChild + 3, topData.depth + 1, halfY, topData.bottom, halfX, topData.right);
             }
         }
     }
 }
 
-void Quadtree::nodeInsert(int colliderIndex, QuadNodeData data)
+void QuadTree::nodeInsert(int colliderIndex, QuadNodeData data)
 {
-    QuadNode* quadNode = &this->quadNodes.at(data.quadNodeIndex);
+    QuadNode& quadNode = this->quadNodes.at(data.quadNodeIndex);
 
-    /* Create element node and push it back in the quadnode list. */
-    const int newElementNodeIndex = this->elementNodes.insert();
+    /* Create an element node and push it back in the quadnode list. */
+    const int newElementIndex = this->elementNodes.insert();
 
-    ElementNode& newElement = this->elementNodes.at(newElementNodeIndex);
+    ElementNode& newElement = this->elementNodes.at(newElementIndex);
 
-    /* Join the linked list together such that the new element node is at the front. */
     newElement.colliderIndex = colliderIndex;
-    newElement.next = quadNode->firstChild;
-    quadNode->firstChild = newElementNodeIndex;
+    newElement.next = quadNode.firstChild;
 
-    /* Subdivide the node if needed. */
-    if (++quadNode->numElements > this->maxEltsPerNode && data.depth < this->maxDivisions)
-        this->subdivideNode(data);
+    quadNode.firstChild = newElementIndex;
+    
+    /* Subdivide the node if needed and allowed. */
+    if (++quadNode.numElements > this->maxEltsPerNode && data.depth < this->maxDivisions)
+        this->subdivideNode(data.quadNodeIndex, data.depth, data.top, data.bottom, data.left, data.right);
 }
 
-void Quadtree::subdivideNode(const QuadNodeData& data)
+void QuadTree::subdivideNode(int quadNodeIndex, int depth, int top, int bottom, int left, int right)
 {
     #ifdef ASSERTIONS
-        assert(data.depth < this->maxDivisions);
-        assert(this->quadNodes.at(data.quadNodeIndex).numElements > this->maxEltsPerNode);
+    assert(this->quadNodes.at(quadNodeIndex).numElements > this->maxEltsPerNode);
     #endif
 
-    /* Retrieve all currently present colliders. */
-    FreeStack<int> colliderIndices;
+    /* First, we need to retrieve all the collider indices. */
+    FreeList<int> colliderIndexStack;
+    int currentEltIndex = this->quadNodes.at(quadNodeIndex).firstChild, previous;
 
-    int currentElementIndex = this->quadNodes.at(data.quadNodeIndex).firstChild,
-        previousElementIndex;
+    while (currentEltIndex != ElementNode::NONE)
+    {        
+        previous = currentEltIndex;
 
-    /* Iterate over singly linked list, pushing all collider indices to the stack. */
-    while (currentElementIndex != ElementNode::NONE)
-    {
-        previousElementIndex = currentElementIndex;
+        colliderIndexStack.at(colliderIndexStack.pushBack()) = this->elementNodes.at(currentEltIndex).colliderIndex;
+        currentEltIndex = this->elementNodes.at(currentEltIndex).next;
 
-        colliderIndices.pushBack(this->elementNodes.at(currentElementIndex).colliderIndex);
-        currentElementIndex = this->elementNodes.at(currentElementIndex).next;
-
-        this->elementNodes.erase(previousElementIndex);
+        this->elementNodes.erase(previous);
     }
 
     /* Allocate child nodes. */
     const int newChild = this->quadNodes.insert();
-
     #ifdef ASSERTIONS
-        assert(this->quadNodes.insert() == newChild + 1);
-        assert(this->quadNodes.insert() == newChild + 2);
-        assert(this->quadNodes.insert() == newChild + 3);
+    assert(this->quadNodes.insert() == newChild + 1);
+    assert(this->quadNodes.insert() == newChild + 2);
+    assert(this->quadNodes.insert() == newChild + 3);
     #else
-        this->quadNodes.insert();
-        this->quadNodes.insert();
-        this->quadNodes.insert();
+    this->quadNodes.insert();
+    this->quadNodes.insert();
+    this->quadNodes.insert();
     #endif
-
+    
     /* Set all child nodes as empty. */
     for (size_t i = 0; i < 4; i++)
     {
@@ -389,31 +429,26 @@ void Quadtree::subdivideNode(const QuadNodeData& data)
         this->quadNodes.at(newChild + i).numElements = 0;
     }
 
-    /* Update original quadnode's attributes. */
-    this->quadNodes.at(data.quadNodeIndex).numElements = QuadNode::BRANCH_NODE;
-    this->quadNodes.at(data.quadNodeIndex).firstChild = newChild;
+    /* Now assign the quadnode's new values. */
+    this->quadNodes.at(quadNodeIndex).numElements = QuadNode::BRANCH_NODE;
+    this->quadNodes.at(quadNodeIndex).firstChild = newChild;
 
-    FreeStack<QuadNodeData> leavesForInsertion;
+    FreeList<QuadNodeData> leavesForInsertion;
 
-    const int numColliders = colliderIndices.size();
+    const int numColliders = colliderIndexStack.size();
 
-    /* Iterate over the colliders, inserting them into the leaf nodes as needed. */
     for (int i = 0; i < numColliders; i++)
     {
-        const int colliderIndex = colliderIndices.at(i);
-        const QuadtreeCollider* colliderPtr = this->colliderPtrs.at(colliderIndex);
+        const QuadTreeCollider* colliderPtr = this->colliderPtrs.at(colliderIndexStack.at(i));
 
-        this->getLeaves(
-            &leavesForInsertion, data, colliderPtr->top, colliderPtr->bottom, colliderPtr->left,
-            colliderPtr->right
-        );
-
+        this->getLeaves(&leavesForInsertion, colliderPtr->top, colliderPtr->bottom, colliderPtr->left,
+            colliderPtr->right, quadNodeIndex, depth, top, bottom, left, right);
         const int numLeaves = leavesForInsertion.size();
 
+        /* Insert the collider pointer into the leaf at the given leaf. */
         for (int j = 0; j < numLeaves; j++)
-            this->nodeInsert(colliderIndex, leavesForInsertion.at(j));
+            this->nodeInsert(colliderIndexStack.at(i), leavesForInsertion.at(j));
 
-        /* Empty the stack for re-use next iteration. */
         leavesForInsertion.clear();
     }
 }

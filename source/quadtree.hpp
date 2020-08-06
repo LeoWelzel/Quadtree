@@ -1,20 +1,25 @@
 #ifndef QUADTREE_HPP_INCLUDED
 #define QUADTREE_HPP_INCLUDED
 
-/* We will need to make certain assertions regardless of whether we are debugging. */
-#include <cassert>
-
-#include "defs.hpp"
-
 #ifdef ASSERTIONS
     #include <cmath>
 #endif
 
 #include "freelist.hpp"
-#include "freestack.hpp"
 #include "quadtreecollider.hpp"
 
-/* Details a particular collider within a particular quadnode. */
+/* Stores data about a single node in the quadtree. */
+struct QuadNode
+{
+    const static int BRANCH_NODE = -1;
+
+    QuadNode(int firstChild = 0, int numElements = BRANCH_NODE);
+
+    int firstChild;
+    int numElements;
+};
+
+/* Stores data about a single element in a quadtree leaf. */
 struct ElementNode
 {
     const static int NONE = -1;
@@ -24,100 +29,87 @@ struct ElementNode
     int next, colliderIndex;
 };
 
-/* Quadtree node. */
-struct QuadNode
-{
-    const static int BRANCH_NODE = -1;
-
-    QuadNode(int firstChild = 0, int numElements = BRANCH_NODE);
-
-    /* The element nodes are stored as a singly linked list. */
-    int firstChild, numElements;
-};
-
-/* References a quadnode, as well as its boundaries and depth. */
+/* Stores additional data about a single QuadNode. */
 struct QuadNodeData
 {
     QuadNodeData();
     QuadNodeData(int quadNodeIndex, int depth, int top, int bottom, int left, int right);
 
     int quadNodeIndex, depth, top, bottom, left, right;
+
+    #ifdef TO_STRING
+    std::string toString() const;
+    #endif
 };
 
-class Quadtree
+class QuadTree
 {
 public:
-    Quadtree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode);
-    ~Quadtree();
+    QuadTree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode);
 
-    /* Inserts the collider into the quadtree, returning its index in the collider freelist. */
-    int insert(QuadtreeCollider* colliderPtr);
+    ~QuadTree();
 
-    /* Removes the collider from the quadtree. No shortcuts are taken if the collider is */
-    /* already absent from the tree. */
-    void remove(QuadtreeCollider* colliderPtr, int colliderIndex);
+    /* Inserts the collider into the quadtree. */
+    int insert(QuadTreeCollider* collider);
+
+    /* Removes the collider from the quadtree. */
+    void remove(QuadTreeCollider* collider, int colliderIndex);
 
     /* Clears the quadtree of all inserted elements. */
     void clearElements();
 
     /* Populates the list with all the quadtree leaf indices. */
-    void getAllLeaves(FreeStack<int>* nodeIndices) const;
+    void getAllLeaves(FreeList<int>* nodeIndices);
 
-    /* Populates the list with the quadnode datas corresponding to the leaf indices. */
-    void getAllLeafNodeDatas(FreeStack<QuadNodeData>* nodeDatas) const;
+    /* Populates the list with all the quadnode leaf data. */
+    void getAllLeafDatas(FreeList<QuadNodeData>* quadNodeDatas);
 
     /* Cleans up the quadtree. */
     void cleanup();
 
-    /* Populates the list with pointers to the colliders inside the boundaries */
-    void query(FreeStack<QuadtreeCollider*> output, int top, int bottom, int left, int right);
+    /* Populates the freelist with the pointers to the colliders inside the boundaries. */
+    void query(FreeList<QuadTreeCollider*>* output, int top, int bottom, int left, int right);
 
     #ifdef TO_STRING
-        std::string toString() const;
+    std::string nodeToString(int nodeIndex, int indentation) const;
+    std::string elementToString(int elementIndex, int indentation) const;
+    std::string toString() const;
     #endif
 
-    // TODO: assess the safety of using a freelist with pointers.
-    FreeList<QuadtreeCollider*> colliderPtrs;
+    FreeList<QuadTreeCollider*> colliderPtrs;
     FreeList<QuadNode> quadNodes;
     FreeList<ElementNode> elementNodes;
 
 private:
-    /* Populates the stack with the quadnodedata objects for the leaf nodes containing some part */
-    /* of the given collider boundaries. */
-    void getLeaves(FreeStack<QuadNodeData>* output, QuadNodeData searchSpace,
-        int colliderTop, int colliderBottom, int colliderLeft, int colliderRight) const;
+    int topBound, bottomBound, leftBound, rightBound, maxDivisions, maxEltsPerNode;
 
-    /* Helper that pushes back a QuadNodeData object with the given attributes. */
-    static inline void pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,
-        int top, int bottom, int left, int right);
-
-    /* Inserts the specified collider into the specified quadnode. */
-    void nodeInsert(int colliderIndex, QuadNodeData data);
-
-    /* Subdivides the specified quadnode, populating the new children with the needed elements. */
-    void subdivideNode(const QuadNodeData& data);
-
-    int treeTop, treeBottom, treeLeft, treeRight, maxDivisions, maxEltsPerNode;
-
-    /* Stores the index of the tree root in the quadtree. This should be 0, 100% of the time. */
     int rootNodeIndex;
-
-    /* Used for ensuring that no colliders are appended to an output list more than once when */
-    /* the query space is not a single quadnode. */
+    
     bool* queryTable;
     int queryTableSize;
 
-    QuadNodeData rootData;
+    /* Populates the passed freelist with the quadNodeData objects corresponding to the quadnodes
+     * that contain some part of the passed boundaries. */
+    void getLeaves(FreeList<QuadNodeData>* output, int colliderTop, int colliderBottom, int colliderLeft, int colliderRight,
+        int quadNodeIndex, int depth, int top, int bottom, int left, int right);
+
+    /* Inserts the given collider pointer into the given quadnode. */
+    void nodeInsert(int colliderIndex, QuadNodeData data);
+
+    /* Subdivides the given node. */
+    void subdivideNode(int quadNodeIndex, int depth, int top, int bottom, int left, int right);
 };
 
-inline void Quadtree::pushBackNode(FreeStack<QuadNodeData>* output, int quadNodeIndex, int depth,
-    int top, int bottom, int left, int right)
+inline void pushBackNode(FreeList<QuadNodeData>* output, int quadNodeIndex, int depth, int top, int bottom, int left, int right)
 {
-    QuadNodeData data = QuadNodeData(
-        quadNodeIndex, depth, top, bottom, left, right
-    );
+    QuadNodeData& data = output->at(output->pushBack());
 
-    output->pushBack(data);
+    data.quadNodeIndex = quadNodeIndex;
+    data.depth = depth;
+    data.top = top;
+    data.bottom = bottom;
+    data.left = left;
+    data.right = right;
 }
 
 #endif

@@ -1,26 +1,15 @@
-#ifndef COLLIDER_HPP_INCLUDED
-#define COLLIDER_HPP_INCLUDED
+#ifndef QUAD_COLLIDER_HPP_INCLUDED
+#define QUAD_COLLIDER_HPP_INCLUDED
 
-#include "defs.hpp"
-
-/* Rectangle used to indicate the boundaries of a collider. Such a structure can also be used */
-/* to house any other type of polygon. */
-struct QuadtreeCollider
+struct QuadTreeCollider
 {
-    /* Default constructor needed for initialisation of freelists. */
-    QuadtreeCollider();
+    QuadTreeCollider();
+    QuadTreeCollider(int top, int bottom, int left, int right, int xMotion, int yMotion);
 
-    QuadtreeCollider(int top, int bottom, int left, int right);
+    const bool operator ==(const QuadTreeCollider& other) const;
+    const bool operator !=(const QuadTreeCollider& other) const;
 
-    int top, bottom, left, right;
-
-    #ifdef APPLICATION
-    int xMotion, yMotion;
-    #endif
-
-    #ifdef TO_STRING
-        std::string toString() const;
-    #endif
+    int top, bottom, left, right, xMotion, yMotion;
 };
 
 #endif
