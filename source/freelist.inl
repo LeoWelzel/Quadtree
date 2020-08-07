@@ -1,43 +1,43 @@
 #ifndef FREELIST_INL_INCLUDED
 #define FREELIST_INL_INCLUDED
 
-template<typename TypeName>
-FreeList<TypeName>::FreeList()
-    : data(fixed), capacity(FREELIST_FIXED_SIZE), numElements(0), freeElement(NONE_REMOVED)
+template<typename TypeName, const int FixedSize>
+FreeList<TypeName, FixedSize>::FreeList()
+    : data(fixed), capacity(FixedSize), numElements(0), freeElement(NONE_REMOVED)
 {
     #ifdef ASSERTIONS
         assert(sizeof(TypeName) >= sizeof(int));
     #endif
 }
 
-template<typename TypeName>
-FreeList<TypeName>::~FreeList()
+template<typename TypeName, const int FixedSize>
+FreeList<TypeName, FixedSize>::~FreeList()
 {
     if (this->data != this->fixed)
     {
         #ifdef ASSERTIONS
-            assert(this->capacity != FREELIST_FIXED_SIZE);
+            assert(this->capacity != FixedSize);
         #endif
 
         delete[] this->data;
     }
 }
 
-template<typename TypeName>
-int FreeList<TypeName>::size() const
+template<typename TypeName, const int FixedSize>
+int FreeList<TypeName, FixedSize>::size() const
 {
     return this->numElements;
 }
 
-template<typename TypeName>
-void FreeList<TypeName>::clear()
+template<typename TypeName, const int FixedSize>
+void FreeList<TypeName, FixedSize>::clear()
 {
     this->numElements = 0;
     this->freeElement = NONE_REMOVED;
 }
 
-template<typename TypeName>
-TypeName& FreeList<TypeName>::at(const int index) const
+template<typename TypeName, const int FixedSize>
+TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
 {
     #ifdef ASSERTIONS
         assert(index >= 0 && index < this->capacity);
@@ -45,27 +45,27 @@ TypeName& FreeList<TypeName>::at(const int index) const
     return this->data[index];
 }
 
-template<typename TypeName>
-TypeName& FreeList<TypeName>::unsafeRef(const int index) const
+template<typename TypeName, const int FixedSize>
+TypeName& FreeList<TypeName, FixedSize>::unsafeRef(const int index) const
 {
     return this->data[index];
 }
 
-template<typename TypeName>
-inline TypeName* FreeList<TypeName>::safePtr(const int index)
+template<typename TypeName, const int FixedSize>
+inline TypeName* FreeList<TypeName, FixedSize>::safePtr(const int index)
 {
     assert(index >= 0 && index < this->capacity);
     return this->data + index;
 }
 
-template<typename TypeName>
-inline TypeName* FreeList<TypeName>::unsafePtr(const int index)
+template<typename TypeName, const int FixedSize>
+inline TypeName* FreeList<TypeName, FixedSize>::unsafePtr(const int index)
 {
     return this->data + index;
 }
 
-template<typename TypeName>
-int FreeList<TypeName>::pushBack()
+template<typename TypeName, const int FixedSize>
+int FreeList<TypeName, FixedSize>::pushBack()
 {
     const int newPosition = (this->numElements + 1);
 
@@ -86,8 +86,8 @@ int FreeList<TypeName>::pushBack()
     return this->numElements++;
 }
 
-template<typename TypeName>
-void FreeList<TypeName>::popBack()
+template<typename TypeName, const int FixedSize>
+void FreeList<TypeName, FixedSize>::popBack()
 {
     #ifdef ASSERTIONS
         assert(this->numElements > 0);
@@ -96,8 +96,8 @@ void FreeList<TypeName>::popBack()
     this->numElements--;
 }
 
-template<typename TypeName>
-int FreeList<TypeName>::insert()
+template<typename TypeName, const int FixedSize>
+int FreeList<TypeName, FixedSize>::insert()
 {
     /* This means that elements have been inserted before. */
     if (this->freeElement != NONE_REMOVED)
@@ -110,8 +110,8 @@ int FreeList<TypeName>::insert()
     else return this->pushBack();
 }
 
-template<typename TypeName>
-void FreeList<TypeName>::erase(int index)
+template<typename TypeName, const int FixedSize>
+void FreeList<TypeName, FixedSize>::erase(int index)
 {
     assert(index >= 0 && index < this->capacity);
 

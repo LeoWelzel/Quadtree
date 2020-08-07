@@ -4,10 +4,8 @@
 #include <cassert>
 #include <algorithm>
 
-const int FREELIST_FIXED_SIZE = 64;
-
 /* Simple memory allocator that can be used as a stack or freelist. */
-template<typename TypeName>
+template<typename TypeName, const int FixedSize = 64>
 class FreeList
 {
 public:
@@ -55,10 +53,9 @@ public:
     /* Erases the element from the specified index in the intlist. */
     void erase(int index);
 
-// private:
-
+private:
     /* Fixed size array to be accessed on the stack. */
-    TypeName fixed[FREELIST_FIXED_SIZE];
+    TypeName fixed[FixedSize];
 
     /* Points to the data. */
     TypeName* data;
@@ -73,7 +70,6 @@ public:
     int freeElement;
 
     static const int NONE_REMOVED = -1;
-    
 };
 
 #include "freelist.inl"

@@ -22,8 +22,8 @@ QuadNodeData::QuadNodeData(int quadNodeIndex, int depth, int top, int bottom, in
 
 QuadTree::QuadTree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode)
     : topBound(top), bottomBound(bottom), leftBound(left), rightBound(right),
-      maxDivisions(maxDivisions), maxEltsPerNode(maxEltsPerNode), queryTable(new bool[FREELIST_FIXED_SIZE] { 0 }),
-      queryTableSize(FREELIST_FIXED_SIZE)
+      maxDivisions(maxDivisions), maxEltsPerNode(maxEltsPerNode), queryTable(nullptr),
+      queryTableSize(0)
 {
     this->rootNodeIndex = this->quadNodes.insert();
     
@@ -112,7 +112,8 @@ void QuadTree::query(FreeList<QuadTreeCollider*>* output, int top, int bottom, i
     FreeList<QuadNodeData> includedLeaves;
     FreeList<int> usedIndices;
 
-    this->getLeaves(&includedLeaves, top, bottom, left, right, this->rootNodeIndex, 0, this->topBound, this->bottomBound, this->leftBound, this->rightBound);
+    this->getLeaves(&includedLeaves, top, bottom, left, right, this->rootNodeIndex, 0, this->topBound,
+        this->bottomBound, this->leftBound, this->rightBound);
 
     /* Re-size the buffer if needed. */
     if (this->queryTableSize != this->colliderPtrs.size())
