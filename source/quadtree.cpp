@@ -307,7 +307,7 @@ void QuadTree::getLeaves(FreeList<QuadNodeData>* output, int colliderTop, int co
     }
 }
 
-void QuadTree::nodeInsert(int colliderIndex, QuadNodeData data)
+void QuadTree::nodeInsert(int colliderIndex, const QuadNodeData& data)
 {
     QuadNode& quadNode = this->quadNodes.at(data.quadNodeIndex);
 

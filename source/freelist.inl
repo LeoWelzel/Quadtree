@@ -100,7 +100,7 @@ void FreeList<TypeName, FixedSize>::popBack()
 template<typename TypeName, const int FixedSize>
 int FreeList<TypeName, FixedSize>::insert()
 {
-    /* This means that elements have been inserted before. */
+    /* This means that elements have been removed before. */
     if (this->freeElement != NONE_REMOVED)
     {
         const int index = this->freeElement;

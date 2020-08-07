@@ -84,7 +84,7 @@ private:
         int quadNodeIndex, int depth, int top, int bottom, int left, int right);
 
     /* Inserts the given collider pointer into the given quadnode. */
-    void nodeInsert(int colliderIndex, QuadNodeData data);
+    void nodeInsert(int colliderIndex, const QuadNodeData& data);
 
     /* Subdivides the given node. */
     void subdivideNode(int quadNodeIndex, int depth, int top, int bottom, int left, int right);
