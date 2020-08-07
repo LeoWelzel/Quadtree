@@ -36,10 +36,6 @@ struct QuadNodeData
     QuadNodeData(int quadNodeIndex, int depth, int top, int bottom, int left, int right);
 
     int quadNodeIndex, depth, top, bottom, left, right;
-
-    #ifdef TO_STRING
-    std::string toString() const;
-    #endif
 };
 
 class QuadTree
@@ -69,12 +65,6 @@ public:
 
     /* Populates the freelist with the pointers to the colliders inside the boundaries. */
     void query(FreeList<QuadTreeCollider*>* output, int top, int bottom, int left, int right);
-
-    #ifdef TO_STRING
-    std::string nodeToString(int nodeIndex, int indentation) const;
-    std::string elementToString(int elementIndex, int indentation) const;
-    std::string toString() const;
-    #endif
 
     FreeList<QuadTreeCollider*> colliderPtrs;
     FreeList<QuadNode> quadNodes;

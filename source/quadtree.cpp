@@ -46,62 +46,6 @@ QuadTree::~QuadTree()
     delete[] this->queryTable;
 }
 
-#ifdef TO_STRING
-std::string QuadNodeData::toString() const
-{
-    return "(" + std::to_string(this->depth) + ": " + std::to_string(this->top) + ", "
-        + std::to_string(this->bottom) + ", " + std::to_string(this->left) + ", "
-        + std::to_string(this->right) + "). "; 
-}
-
-std::string QuadTree::nodeToString(int nodeIndex, int indentation) const
-{
-    std::string output = "";
-    for (size_t i = 0; i < indentation; i++)
-        output += "  ";
-
-    const int firstChild = this->quadNodes.at(nodeIndex).firstChild;
-    output += "{ ";
-
-    if (this->quadNodes.at(nodeIndex).numElements == QuadNode::BRANCH_NODE)
-    {
-        output += "BRANCH:\n";
-
-        for (int i = 0; i < 4; i++)
-            output += this->nodeToString(firstChild + i, indentation + 1);
-    }
-    else
-    {
-        output += "LEAF:\n" + this->elementToString(firstChild, indentation + 1);
-    }
-    output += "}\n";
-    return output;
-}
-
-std::string QuadTree::elementToString(int elementIndex, int indentation) const
-{
-    std::string output = "";
-    for (size_t i = 0; i < indentation; i++)
-        output += "  ";
-
-    if (elementIndex >= 0)
-    output += "0x" + std::to_string(int(this->elementNodes.at(elementIndex).colliderPtr)) + ": ";
-
-    while (elementIndex != ElementNode::NONE)
-    {
-        output += this->elementNodes.at(elementIndex).colliderPtr->toString() + ", ";
-        elementIndex = this->elementNodes.at(elementIndex).next;
-    }
-
-    return output;
-}
-
-std::string QuadTree::toString() const
-{
-    return this->nodeToString(this->rootNodeIndex, 0);
-}
-#endif
-
 int QuadTree::insert(QuadTreeCollider* collider)
 {
     FreeList<QuadNodeData> leavesForInsertion;
@@ -251,14 +195,10 @@ void QuadTree::getAllLeaves(FreeList<int>* nodeIndices)
 
         /* In this case, we have a leaf node. */
         if (numElements != QuadNode::BRANCH_NODE)
-        {
             nodeIndices->at(nodeIndices->pushBack()) = quadNodeIndex;
-        }
         /* Otherwise, we push back the indices of all the quadnode children. */
         else for (int i = 0; i < 4; i++)
-        {
             toProcess.at(toProcess.pushBack()) = first + i;
-        }
     }
 }
 
