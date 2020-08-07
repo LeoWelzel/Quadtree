@@ -42,6 +42,7 @@ TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
     #ifdef ASSERTIONS
         assert(index >= 0 && index < this->capacity);
     #endif
+    
     return this->data[index];
 }
 

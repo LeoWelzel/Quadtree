@@ -77,7 +77,6 @@ void QuadTree::remove(QuadTreeCollider* collider, int colliderIndex)
     for (int i = 0; i < numLeaves; i++)
     {
         const QuadNodeData currentLeaf = leavesForRemoval.at(i);
-
         int currentElement = this->quadNodes.at(currentLeaf.quadNodeIndex).firstChild, previous = ElementNode::NONE;
 
         while (currentElement != ElementNode::NONE && this->elementNodes.at(currentElement).colliderIndex != colliderIndex)
@@ -98,6 +97,7 @@ void QuadTree::remove(QuadTreeCollider* collider, int colliderIndex)
                 this->elementNodes.at(previous).next = nextIndex;
             
             this->elementNodes.erase(currentElement);
+
             /* Decrement element node count. */
             this->quadNodes.at(currentLeaf.quadNodeIndex).numElements--;
         }
@@ -171,6 +171,7 @@ void QuadTree::clearElements()
 
     const int numLeaves = leafIndices.size();
 
+    /* The quadnode freelist shouldn't be cleared, because it will have to be reconstructed soon. */
     for (int i = 0; i < numLeaves; i++)
     {
         this->quadNodes.at(leafIndices.at(i)).firstChild = ElementNode::NONE;
@@ -275,12 +276,6 @@ void QuadTree::getLeaves(FreeList<QuadNodeData>* output, int colliderTop, int co
         const QuadNodeData topData = processingStack.at(processingStack.size() - 1);
         processingStack.popBack();
         
-        #ifdef ASSERTIONS
-            const int divisor = pow(2, topData.depth);
-            assert((topData.top - topData.bottom) == (this->topBound - this->bottomBound) / divisor);
-            assert((topData.right - topData.left) == (this->rightBound - this->leftBound) / divisor);
-        #endif
-
         /* In this case, we've found a leaf node. */
         if (this->quadNodes.at(topData.quadNodeIndex).numElements != QuadNode::BRANCH_NODE)
             output->at(output->pushBack()) = topData;
@@ -334,7 +329,7 @@ void QuadTree::nodeInsert(int colliderIndex, QuadNodeData data)
 void QuadTree::subdivideNode(int quadNodeIndex, int depth, int top, int bottom, int left, int right)
 {
     #ifdef ASSERTIONS
-    assert(this->quadNodes.at(quadNodeIndex).numElements > this->maxEltsPerNode);
+        assert(this->quadNodes.at(quadNodeIndex).numElements > this->maxEltsPerNode);
     #endif
 
     /* First, we need to retrieve all the collider indices. */
@@ -354,13 +349,13 @@ void QuadTree::subdivideNode(int quadNodeIndex, int depth, int top, int bottom, 
     /* Allocate child nodes. */
     const int newChild = this->quadNodes.insert();
     #ifdef ASSERTIONS
-    assert(this->quadNodes.insert() == newChild + 1);
-    assert(this->quadNodes.insert() == newChild + 2);
-    assert(this->quadNodes.insert() == newChild + 3);
+        assert(this->quadNodes.insert() == newChild + 1);
+        assert(this->quadNodes.insert() == newChild + 2);
+        assert(this->quadNodes.insert() == newChild + 3);
     #else
-    this->quadNodes.insert();
-    this->quadNodes.insert();
-    this->quadNodes.insert();
+        this->quadNodes.insert();
+        this->quadNodes.insert();
+        this->quadNodes.insert();
     #endif
     
     /* Set all child nodes as empty. */
