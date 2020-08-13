@@ -105,6 +105,7 @@ int FreeList<TypeName, FixedSize>::insert()
     {
         const int index = this->freeElement;
         this->freeElement = *(int*)(this->data + index);
+        this->numElements++;
 
         return index;
     }
@@ -119,6 +120,8 @@ void FreeList<TypeName, FixedSize>::erase(int index)
     int* tempPtr = (int*)(this->data + index);
     *tempPtr = this->freeElement;
     this->freeElement = index;
+
+    this->numElements--;
 }
 
 #endif
