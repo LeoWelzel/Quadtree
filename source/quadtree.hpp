@@ -5,7 +5,7 @@
     #include <cmath>
 #endif
 
-#include "../../util/freelist.hpp"
+#include "freelist.hpp"
 #include "quadtreecollider.hpp"
 
 /* Stores data about a single node in the quadtree. */
