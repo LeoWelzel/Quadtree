@@ -5,7 +5,7 @@
     #include <cmath>
 #endif
 
-#include "freelist.hpp"
+#include "../../util/freelist.hpp"
 #include "quadtreecollider.hpp"
 
 /* Stores data about a single node in the quadtree. */
@@ -46,10 +46,10 @@ public:
     ~QuadTree();
 
     /* Inserts the collider into the quadtree. */
-    int insert(QuadTreeCollider* collider);
+    int insert(const QuadTreeCollider& collider);
 
     /* Removes the collider from the quadtree. */
-    void remove(QuadTreeCollider* collider, int colliderIndex);
+    void remove(const QuadTreeCollider& collider, int colliderIndex);
 
     /* Clears the quadtree of all inserted elements. */
     void clearElements();
@@ -66,7 +66,7 @@ public:
     /* Populates the freelist with the pointers to the colliders inside the boundaries. */
     void query(FreeList<QuadTreeCollider*>* output, int top, int bottom, int left, int right);
 
-    FreeList<QuadTreeCollider*> colliderPtrs;
+    FreeList<QuadTreeCollider> colliders;
     FreeList<QuadNode> quadNodes;
     FreeList<ElementNode> elementNodes;
 
