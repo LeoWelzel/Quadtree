@@ -10,10 +10,18 @@ class FreeList
 {
 public:
     FreeList();
+    FreeList(const FreeList& other);
+    void operator=(const FreeList& other);
     ~FreeList();
 
-    /* Returns the number of elements stored in the freelist. */
+    /* Returns the size of the freelist. */
     int size() const;
+
+    /* Returns the number of elements in the freelist. Do not use to iterate over list. */
+    int getNumElements() const;
+
+    /* Returns the capactiy of the freelist. */
+    int getCapacity() const;
 
     /* Clears the freelist. */
     void clear();
@@ -63,12 +71,15 @@ private:
     /* The capacity of the freelist. */
     int capacity;
 
+    /* The furthest back any element has been pushed in the freelist. */
+    int listSize;
+
     /* The number of elements in the freelist. */
     int numElements;
 
     /* Stores the earliest free element in the freelist. */
     int freeElement;
-
+    
     static const int NONE_REMOVED = -1;
 };
 

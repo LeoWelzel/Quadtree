@@ -3,7 +3,7 @@
 
 template<typename TypeName, const int FixedSize>
 FreeList<TypeName, FixedSize>::FreeList()
-    : data(fixed), capacity(FixedSize), numElements(0), freeElement(NONE_REMOVED)
+    : data(fixed), capacity(FixedSize), numElements(0), listSize(0), freeElement(NONE_REMOVED)
 {
     #ifdef ASSERTIONS
         assert(sizeof(TypeName) >= sizeof(int));
@@ -11,38 +11,70 @@ FreeList<TypeName, FixedSize>::FreeList()
 }
 
 template<typename TypeName, const int FixedSize>
+FreeList<TypeName, FixedSize>::FreeList(const FreeList& other)
+    : capacity(other.capacity), listSize(other.listSize), numElements(other.numElements),
+        freeElement(other.freeElement)
+{
+    if (other.data == other.fixed)
+        this->data = this->fixed;
+    else
+        this->data = new TypeName[this->capacity];
+    std::copy(other.data, other.data + other.capacity, this->data);
+}
+
+template<typename TypeName, const int FixedSize>
+void FreeList<TypeName, FixedSize>::operator=(const FreeList& other)
+{
+    this->capacity = other.capacity;
+    this->listSize = other.listSize;
+    this->numElements = other.numElements;
+    this->freeElement = other.freeElement;
+
+    if (this->data != this->fixed) delete[] this->data;
+
+    if (other.data == other.fixed)
+        this->data = this->fixed;
+    else
+        this->data = new TypeName[this->capacity];
+    std::copy(other.data, other.data + other.capacity, this->data);
+}
+
+template<typename TypeName, const int FixedSize>
 FreeList<TypeName, FixedSize>::~FreeList()
 {
     if (this->data != this->fixed)
-    {
-        #ifdef ASSERTIONS
-            assert(this->capacity != FixedSize);
-        #endif
-
         delete[] this->data;
-    }
 }
 
 template<typename TypeName, const int FixedSize>
 int FreeList<TypeName, FixedSize>::size() const
 {
+    return this->listSize;
+}
+
+template<typename TypeName, const int FixedSize>
+int FreeList<TypeName, FixedSize>::getNumElements() const
+{
     return this->numElements;
+}
+
+template<typename TypeName, const int FixedSize>
+int FreeList<TypeName, FixedSize>::getCapacity() const
+{
+    return this->capacity;
 }
 
 template<typename TypeName, const int FixedSize>
 void FreeList<TypeName, FixedSize>::clear()
 {
-    this->numElements = 0;
+    this->listSize = 0;
     this->freeElement = NONE_REMOVED;
+    this->numElements = 0;
 }
 
 template<typename TypeName, const int FixedSize>
 TypeName& FreeList<TypeName, FixedSize>::at(const int index) const
 {
-    #ifdef ASSERTIONS
-        assert(index >= 0 && index < this->capacity);
-    #endif
-    
     return this->data[index];
 }
 
@@ -68,32 +100,30 @@ inline TypeName* FreeList<TypeName, FixedSize>::unsafePtr(const int index)
 template<typename TypeName, const int FixedSize>
 int FreeList<TypeName, FixedSize>::pushBack()
 {
-    const int newPosition = (this->numElements + 1);
+    const int newPosition = (this->listSize + 1);
 
     /* Reallocate if the list is full. */
     if (newPosition >= this->capacity)
     {
-        this->capacity <<= 1;
-        TypeName* temp = new TypeName[this->capacity];
-
-        std::copy(this->data, this->data + this->numElements, temp);
+        const int newCapacity = this->capacity * 2;
+        TypeName* temp = new TypeName[newCapacity];
+        std::copy(this->data, this->data + this->listSize, temp);
 
         if (this->data != this->fixed)
             delete[] this->data;
         
+        this->capacity = newCapacity;
         this->data = temp;
     }
 
-    return this->numElements++;
+    this->numElements++;
+    return this->listSize++;
 }
 
 template<typename TypeName, const int FixedSize>
 void FreeList<TypeName, FixedSize>::popBack()
 {
-    #ifdef ASSERTIONS
-        assert(this->numElements > 0);
-    #endif
-
+    this->listSize--;
     this->numElements--;
 }
 
@@ -115,10 +145,7 @@ int FreeList<TypeName, FixedSize>::insert()
 template<typename TypeName, const int FixedSize>
 void FreeList<TypeName, FixedSize>::erase(int index)
 {
-    assert(index >= 0 && index < this->capacity);
-
-    int* tempPtr = (int*)(this->data + index);
-    *tempPtr = this->freeElement;
+    *(int*)(this->data + index) = this->freeElement;
     this->freeElement = index;
 
     this->numElements--;
