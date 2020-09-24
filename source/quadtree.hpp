@@ -1,9 +1,7 @@
 #ifndef QUADTREE_HPP_INCLUDED
 #define QUADTREE_HPP_INCLUDED
 
-#ifdef ASSERTIONS
-    #include <cmath>
-#endif
+#include <vector>
 
 #include "freelist.hpp"
 #include "quadtreecollider.hpp"
@@ -43,13 +41,11 @@ class QuadTree
 public:
     QuadTree(int top, int bottom, int left, int right, int maxDivisions, int maxEltsPerNode);
 
-    ~QuadTree();
-
     /* Inserts the collider into the quadtree. */
-    int insert(const QuadTreeCollider& collider);
+    int insert(QuadTreeCollider* collider);
 
     /* Removes the collider from the quadtree. */
-    void remove(const QuadTreeCollider& collider, int colliderIndex);
+    void remove(const QuadTreeCollider* collider, int colliderIndex);
 
     /* Clears the quadtree of all inserted elements. */
     void clearElements();
@@ -66,17 +62,18 @@ public:
     /* Populates the freelist with the pointers to the colliders inside the boundaries. */
     void query(FreeList<QuadTreeCollider*>* output, int top, int bottom, int left, int right);
 
-    FreeList<QuadTreeCollider> colliders;
+    FreeList<QuadTreeCollider*> colliders;
     FreeList<QuadNode> quadNodes;
     FreeList<ElementNode> elementNodes;
 
-private:
+#ifndef NO_PRIVATE
+    private:
+#endif
     int topBound, bottomBound, leftBound, rightBound, maxDivisions, maxEltsPerNode;
 
     int rootNodeIndex;
     
-    bool* queryTable;
-    int queryTableSize;
+    std::vector<bool> queryTable;
 
     /* Populates the passed freelist with the quadNodeData objects corresponding to the quadnodes
      * that contain some part of the passed boundaries. */
